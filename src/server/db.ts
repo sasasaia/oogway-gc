@@ -1,6 +1,6 @@
 import sql from 'mssql';
 
-const connectionString = process.env.MSSQL_URL || process.env.DATABASE_URL;
+const connectionString = import.meta.env.VITE_MSSQL_URL;
 
 if (!connectionString) {
   console.warn("⚠️ MSSQL_URL environment variable is not defined.");

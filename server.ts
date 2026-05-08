@@ -67,7 +67,7 @@ async function startServer() {
       res.json({ token, user: { id: userId, firstName, lastName, username } });
     } catch (err: any) {
       console.error(err);
-      res.status(500).json({ error: 'Registration failed' });
+      res.status(400).json({ error: 'Registration failed' });
     }
   });
 
@@ -84,7 +84,7 @@ async function startServer() {
       const token = jwt.sign({ id: user.id, username }, JWT_SECRET, { expiresIn: '7d' });
       res.json({ token, user: { id: user.id, firstName: user.first_name, lastName: user.last_name, username: user.username, avatarUrl: user.avatar_url } });
     } catch (err) {
-      res.status(500).json({ error: 'Login failed' });
+      res.status(400).json({ error: 'Login failed' });
     }
   });
 
@@ -94,7 +94,7 @@ async function startServer() {
       if (users.length === 0) return res.sendStatus(404);
       res.json(users[0]);
     } catch (err) {
-      res.status(500).json({ error: 'Server error' });
+      res.status(400).json({ error: 'Server error' });
     }
   });
 
@@ -108,7 +108,7 @@ async function startServer() {
       const enrichedUsers = users.map(u => ({ ...u, isFollowing: followingSet.has(u.id) }));
       res.json(enrichedUsers);
     } catch (err) {
-      res.status(500).json({ error: 'Server error' });
+      res.status(400).json({ error: 'Server error' });
     }
   });
 
@@ -153,7 +153,7 @@ async function startServer() {
         user: { id: p.user_id, firstName: p.first_name, lastName: p.last_name, username: p.username, avatarUrl: p.avatar_url }
       })));
     } catch (err) {
-      res.status(500).json({ error: 'Server error' });
+      res.status(400).json({ error: 'Server error' });
     }
   });
 
@@ -168,7 +168,7 @@ async function startServer() {
       await query('INSERT INTO posts (user_id, content, image_url) VALUES (@p1, @p2, @p3)', [req.user.id, content, imageUrl]);
       res.json({ success: true });
     } catch (err) {
-      res.status(500).json({ error: 'Failed to create post' });
+      res.status(400).json({ error: 'Failed to create post' });
     }
   });
 
@@ -191,7 +191,7 @@ async function startServer() {
         user: { id: a.user_id, firstName: a.first_name, lastName: a.last_name, username: a.username }
       })));
     } catch (err) {
-      res.status(500).json({ error: 'Server error' });
+      res.status(400).json({ error: 'Server error' });
     }
   });
 
@@ -204,7 +204,7 @@ async function startServer() {
       );
       res.json({ success: true });
     } catch (err) {
-      res.status(500).json({ error: 'Failed to create activity' });
+      res.status(400).json({ error: 'Failed to create activity' });
     }
   });
 
@@ -225,7 +225,7 @@ async function startServer() {
         createdAt: m.created_at
       })));
     } catch(err) {
-      res.status(500).json({ error: 'Server error' });
+      res.status(400).json({ error: 'Server error' });
     }
   });
   
@@ -235,7 +235,7 @@ async function startServer() {
       await query('INSERT INTO messages (sender_id, receiver_id, content) VALUES (@p1, @p2, @p3)', [req.user.id, receiverId, content]);
       res.json({ success: true });
     } catch(err) {
-      res.status(500).json({ error: 'Failed' });
+      res.status(400).json({ error: 'Failed' });
     }
   });
 
