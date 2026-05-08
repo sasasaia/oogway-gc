@@ -1,12 +1,12 @@
 import sql from 'mssql';
 
-const connectionString = process.env.MSSQL_URL || process.env.DATABASE_URL;
+const connectionString = import.meta.env.VITE_MSSQL_URL || import.meta.env.VITE_DATABASE_URL;
 
-const dbConfig: sql.config | string | undefined = connectionString || (process.env.DB_SERVER && process.env.DB_USER && process.env.DB_PASSWORD ? {
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME || '',
-    server: process.env.DB_SERVER,
+const dbConfig: sql.config | string | undefined = connectionString || (import.meta.env.VITE_DB_SERVER && import.meta.env.VITE_DB_USER && import.meta.env.VITE_DB_PASSWORD ? {
+    user: import.meta.env.VITE_DB_USER,
+    password: import.meta.env.VITE_DB_PASSWORD,
+    database: import.meta.env.VITE_DB_NAME || '',
+    server: import.meta.env.VITE_DB_SERVER,
     pool: {
       max: 10,
       min: 0,
@@ -14,7 +14,7 @@ const dbConfig: sql.config | string | undefined = connectionString || (process.e
     },
     options: {
       encrypt: true, // for modern Azure SQL and others
-      trustServerCertificate: process.env.DB_TRUST_CERT === 'true' // change to true for local dev / self-signed certs
+      trustServerCertificate: import.meta.env.VITE_DB_TRUST_CERT === 'true' // change to true for local dev / self-signed certs
     }
 } : undefined);
 
