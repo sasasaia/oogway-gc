@@ -5,7 +5,9 @@ import { useAuth } from '../AuthContext';
 export const Profile: React.FC = () => {
   const { user, token, refreshUser } = useAuth();
   const [profileData, setProfileData] = useState({
-    name: user?.username || 'Current User',
+    username: user?.username || '',
+    firstName: user?.firstName || '',
+    lastName: user?.lastName || '',
     bio: user?.bio || '',
     location: user?.location || '',
     website: user?.website || '',
@@ -16,7 +18,9 @@ export const Profile: React.FC = () => {
   useEffect(() => {
     if (user) {
       setProfileData({
-        name: user.username,
+        username: user.username,
+        firstName: user.firstName || '',
+        lastName: user.lastName || '',
         bio: user.bio || '',
         location: user.location || '',
         website: user.website || '',
@@ -46,6 +50,8 @@ export const Profile: React.FC = () => {
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
+          firstName: profileData.firstName,
+          lastName: profileData.lastName,
           bio: profileData.bio,
           location: profileData.location,
           website: profileData.website,
@@ -72,7 +78,7 @@ export const Profile: React.FC = () => {
                 <img src={profileData.avatar} alt="Avatar" className="w-full h-full object-cover" />
               ) : (
                 <div className="w-full h-full bg-[var(--color-primary)] text-white flex items-center justify-center font-bold text-4xl">
-                  {profileData.name.charAt(0).toUpperCase()}
+                  {((profileData.firstName || profileData.username || 'U').charAt(0)).toUpperCase()}
                 </div>
               )}
               <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
@@ -85,13 +91,34 @@ export const Profile: React.FC = () => {
           
           <div className="flex-1 space-y-5">
             <div>
-              <label className="block text-sm font-semibold opacity-80 mb-1.5 ml-1">Display Name (Read Only)</label>
+              <label className="block text-sm font-semibold opacity-80 mb-1.5 ml-1">Username (Read Only)</label>
               <input 
                 type="text" 
                 readOnly
-                value={profileData.name}
+                value={profileData.username}
                 className="w-full bg-black/5 dark:bg-white/5 border border-transparent focus:border-[var(--color-primary)] outline-none rounded-xl px-4 py-3 transition-colors opacity-70"
               />
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-semibold opacity-80 mb-1.5 ml-1">First Name</label>
+                <input 
+                  type="text" 
+                  value={profileData.firstName}
+                  onChange={e => setProfileData({...profileData, firstName: e.target.value})}
+                  className="w-full bg-black/5 dark:bg-white/5 border border-transparent focus:border-[var(--color-primary)] outline-none rounded-xl px-4 py-3 transition-colors"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold opacity-80 mb-1.5 ml-1">Last Name</label>
+                <input 
+                  type="text" 
+                  value={profileData.lastName}
+                  onChange={e => setProfileData({...profileData, lastName: e.target.value})}
+                  className="w-full bg-black/5 dark:bg-white/5 border border-transparent focus:border-[var(--color-primary)] outline-none rounded-xl px-4 py-3 transition-colors"
+                />
+              </div>
             </div>
             
             <div>

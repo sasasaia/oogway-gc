@@ -22,7 +22,7 @@ export const Sidebar: React.FC = () => {
     <aside className="w-64 flex-shrink-0 border-r border-[#0000001a] dark:border-[#ffffff1a] bg-card-bg flex flex-col">
       <div className="h-16 flex items-center px-6 border-b border-[#0000001a] dark:border-[#ffffff1a]">
         <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-white font-bold text-xl mr-3">O</div>
-        <h1 className="text-2xl font-bold tracking-tight">Orb</h1>
+        <h1 className="text-2xl font-bold tracking-tight">OOGWAY</h1>
       </div>
       <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
         {navItems.map((item) => {

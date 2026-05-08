@@ -140,7 +140,7 @@ app.get("/api/me", authenticateToken, async (req, res) => {
 });
 app.put("/api/profile", authenticateToken, async (req, res) => {
   try {
-    const { avatar, bio, location, website } = req.body;
+    const { avatar, bio, location, website, firstName, lastName } = req.body;
     if (!pool) return res.json({ success: true, message: 'Profile updated' });
     const request = pool.request();
     request.input('id', sql.Int, req.user!.id);
@@ -148,17 +148,21 @@ app.put("/api/profile", authenticateToken, async (req, res) => {
     request.input('bio', sql.NVarChar, bio || null);
     request.input('location', sql.NVarChar, location || null);
     request.input('website', sql.NVarChar, website || null);
+    request.input('firstName', sql.NVarChar, firstName || null);
+    request.input('lastName', sql.NVarChar, lastName || null);
     await request.query(`
       UPDATE Users 
       SET Avatar = ISNULL(@avatar, Avatar), 
           Bio = ISNULL(@bio, Bio), 
           Location = ISNULL(@location, Location), 
-          Website = ISNULL(@website, Website)
+          Website = ISNULL(@website, Website),
+          FirstName = ISNULL(@firstName, FirstName),
+          LastName = ISNULL(@lastName, LastName)
       WHERE Id = @id
     `);
     res.json({ success: true });
   } catch (err) {
-    res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: String(err) });
   }
 });
 // --- Users --- //
@@ -171,12 +175,58 @@ app.get("/api/users", authenticateToken, async (req, res) => {
     res.status(500).json({ error: String(err) });
   }
 });
+app.get("/api/users/suggested", authenticateToken, async (req, res) => {
+  try {
+    if (!pool) return res.json({ users: [{ Id: 4, Username: 'NewUser', Avatar: null, FirstName: 'New', LastName: 'User' }] });
+    const request = pool.request();
+    request.input('userId', sql.Int, req.user!.id);
+    
+    const result = await request.query(`
+      SELECT TOP 5 u.Id as id, u.Username as username, u.FirstName as firstName, u.LastName as lastName, u.Avatar as avatar
+      FROM Users u
+      WHERE u.Id != @userId
+        AND u.Id NOT IN (SELECT FollowingId FROM Follows WHERE FollowerId = @userId)
+      ORDER BY NEWID()
+    `);
+    res.json({ users: result.recordset });
+  } catch(err) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+app.post("/api/users/follow", authenticateToken, async (req, res) => {
+  try {
+    if (!pool) return res.json({ success: true, action: 'followed' });
+    const { targetUserId } = req.body;
+    const request = pool.request();
+    request.input('followerId', sql.Int, req.user!.id);
+    request.input('followingId', sql.Int, targetUserId);
+    // Check if already following to toggle
+    const checkResult = await request.query(`SELECT * FROM Follows WHERE FollowerId = @followerId AND FollowingId = @followingId`);
+    
+    if (checkResult.recordset.length > 0) {
+      // Unfollow
+      await request.query(`DELETE FROM Follows WHERE FollowerId = @followerId AND FollowingId = @followingId`);
+      res.json({ success: true, action: 'unfollowed' });
+    } else {
+      // Follow
+      await request.query(`
+        INSERT INTO Follows (FollowerId, FollowingId, CreatedAt)
+        VALUES (@followerId, @followingId, GETDATE());
+        INSERT INTO Notifications (UserId, Content, IsRead, CreatedAt)
+        VALUES (@followingId, 'User ' + (SELECT Username FROM Users WHERE Id = @followerId) + ' started following you.', 0, GETDATE());
+      `);
+      res.json({ success: true, action: 'followed' });
+    }
+  } catch (err) {
+    res.status(500).json({ error: String(err) });
+  }
+});
 // --- Posts --- //
 app.get("/api/posts", authenticateToken, async (req, res) => {
   try {
     if (!pool) return res.json({ posts: 
       [
-        { id: 1, userId: 1, author: 'Alice', content: 'Just joined Orb!', createdAt: new Date().toISOString(), image: null, avatar: null },
+        { id: 1, userId: 1, author: 'Alice', content: 'Just joined OOGWAY!', createdAt: new Date().toISOString(), image: null, avatar: null },
       ] 
     });
     
@@ -297,7 +347,7 @@ app.post("/api/messages", authenticateToken, async (req, res) => {
 // --- Notifications --- //
 app.get("/api/notifications", authenticateToken, async (req, res) => {
   try {
-    if (!pool) return res.json({ notifications: [ { id: 1, content: "Welcome to Orb!", isRead: false, createdAt: new Date().toISOString() } ] });
+    if (!pool) return res.json({ notifications: [ { id: 1, content: "Welcome to OOGWAY!", isRead: false, createdAt: new Date().toISOString() } ] });
     const request = pool.request();
     request.input('userId', sql.Int, req.user!.id);
     
