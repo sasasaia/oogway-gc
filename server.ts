@@ -47,22 +47,20 @@ async function startServer() {
   app.post('/api/auth/register', async (req, res) => {
     const { firstName, lastName, username, password } = req.body;
     try {
-      const existing = await query('SELECT * FROM users WHERE username = $1', [username]);
+      const existing = await query('SELECT * FROM users WHERE username = @p1', [username]);
       if (existing.length > 0) {
         return res.status(400).json({ error: 'Username already taken' });
       }
 
       const hashedPassword = await bcrypt.hash(password, 10);
       const result = await query(
-        'INSERT INTO users (first_name, last_name, username, password_hash) VALUES ($1, $2, $3, $4) RETURNING id',
+        'INSERT INTO users (first_name, last_name, username, password_hash) OUTPUT inserted.id VALUES (@p1, @p2, @p3, @p4)',
         [firstName, lastName, username, hashedPassword]
       );
       
       let userId;
       if (result && result.length > 0 && result[0].id) {
         userId = result[0].id;
-      } else if (result && result.length > 0 && result[0].insertId) {
-        userId = result[0].insertId; // SQLite fallback
       }
 
       const token = jwt.sign({ id: userId, username }, JWT_SECRET, { expiresIn: '7d' });
@@ -76,7 +74,7 @@ async function startServer() {
   app.post('/api/auth/login', async (req, res) => {
     const { username, password } = req.body;
     try {
-      const users = await query('SELECT * FROM users WHERE username = $1', [username]);
+      const users = await query('SELECT * FROM users WHERE username = @p1', [username]);
       if (users.length === 0) return res.status(400).json({ error: 'Invalid credentials' });
 
       const user = users[0];
@@ -92,7 +90,7 @@ async function startServer() {
 
   app.get('/api/users/me', authenticateToken, async (req: any, res) => {
     try {
-      const users = await query('SELECT id, first_name, last_name, username, avatar_url FROM users WHERE id = $1', [req.user.id]);
+      const users = await query('SELECT id, first_name, last_name, username, avatar_url FROM users WHERE id = @p1', [req.user.id]);
       if (users.length === 0) return res.sendStatus(404);
       res.json(users[0]);
     } catch (err) {
@@ -103,8 +101,8 @@ async function startServer() {
   app.get('/api/users', authenticateToken, async (req: any, res) => {
     // get all users to follow (excluding self)
     try {
-      const users = await query('SELECT id, first_name as "firstName", last_name as "lastName", username, avatar_url as "avatarUrl" FROM users WHERE id != $1', [req.user.id]);
-      const following = await query('SELECT following_id FROM follows WHERE follower_id = $1', [req.user.id]);
+      const users = await query('SELECT id, first_name as "firstName", last_name as "lastName", username, avatar_url as "avatarUrl" FROM users WHERE id != @p1', [req.user.id]);
+      const following = await query('SELECT following_id FROM follows WHERE follower_id = @p1', [req.user.id]);
       const followingSet = new Set(following.map((f: any) => f.following_id));
       
       const enrichedUsers = users.map(u => ({ ...u, isFollowing: followingSet.has(u.id) }));
@@ -116,7 +114,7 @@ async function startServer() {
 
   app.post('/api/users/:id/follow', authenticateToken, async (req: any, res) => {
     try {
-      await query('INSERT INTO follows (follower_id, following_id) VALUES ($1, $2)', [req.user.id, req.params.id]);
+      await query('INSERT INTO follows (follower_id, following_id) VALUES (@p1, @p2)', [req.user.id, req.params.id]);
       res.json({ success: true });
     } catch (err) {
       // Might already exist
@@ -126,7 +124,7 @@ async function startServer() {
 
   app.delete('/api/users/:id/follow', authenticateToken, async (req: any, res) => {
     try {
-      await query('DELETE FROM follows WHERE follower_id = $1 AND following_id = $2', [req.user.id, req.params.id]);
+      await query('DELETE FROM follows WHERE follower_id = @p1 AND following_id = @p2', [req.user.id, req.params.id]);
       res.json({ success: true });
     } catch (err) {
       res.status(400).json({ error: 'Could not unfollow' });
@@ -142,8 +140,8 @@ async function startServer() {
         FROM posts p
         JOIN users u ON p.user_id = u.id
         WHERE p.user_id IN (
-          SELECT following_id FROM follows WHERE follower_id = $1
-        ) OR p.user_id = $1
+          SELECT following_id FROM follows WHERE follower_id = @p1
+        ) OR p.user_id = @p1
         ORDER BY p.created_at DESC
       `, [req.user.id]);
       
@@ -167,7 +165,7 @@ async function startServer() {
         imageUrl = '/uploads/' + req.file.filename;
       }
       
-      await query('INSERT INTO posts (user_id, content, image_url) VALUES ($1, $2, $3)', [req.user.id, content, imageUrl]);
+      await query('INSERT INTO posts (user_id, content, image_url) VALUES (@p1, @p2, @p3)', [req.user.id, content, imageUrl]);
       res.json({ success: true });
     } catch (err) {
       res.status(500).json({ error: 'Failed to create post' });
@@ -201,7 +199,7 @@ async function startServer() {
     const { title, category, startTime, endTime } = req.body;
     try {
       await query(
-        'INSERT INTO activities (user_id, title, category, start_time, end_time) VALUES ($1, $2, $3, $4, $5)',
+        'INSERT INTO activities (user_id, title, category, start_time, end_time) VALUES (@p1, @p2, @p3, @p4, @p5)',
         [req.user.id, title, category, startTime, endTime]
       );
       res.json({ success: true });
@@ -215,8 +213,8 @@ async function startServer() {
     try {
       const messages = await query(`
         SELECT * FROM messages 
-        WHERE (sender_id = $1 AND receiver_id = $2) 
-           OR (sender_id = $2 AND receiver_id = $1)
+        WHERE (sender_id = @p1 AND receiver_id = @p2) 
+           OR (sender_id = @p2 AND receiver_id = @p1)
         ORDER BY created_at ASC
       `, [req.user.id, userId]);
       res.json(messages.map((m: any) => ({
@@ -234,7 +232,7 @@ async function startServer() {
   app.post('/api/messages', authenticateToken, async (req: any, res) => {
     const { receiverId, content } = req.body;
     try {
-      await query('INSERT INTO messages (sender_id, receiver_id, content) VALUES ($1, $2, $3)', [req.user.id, receiverId, content]);
+      await query('INSERT INTO messages (sender_id, receiver_id, content) VALUES (@p1, @p2, @p3)', [req.user.id, receiverId, content]);
       res.json({ success: true });
     } catch(err) {
       res.status(500).json({ error: 'Failed' });

@@ -68,25 +68,25 @@ export default function Messages({ user }: { user: any }) {
   };
 
   return (
-    <div className="flex h-full border border-neutral-800 rounded-2xl overflow-hidden bg-neutral-900 max-w-5xl mx-auto -m-2 md:m-0">
+    <div className="flex h-full border border-slate-100 rounded-[2rem] overflow-hidden bg-white max-w-5xl mx-auto -m-2 md:m-0 shadow-sm relative">
       {/* Sidebar: Chat List */}
-      <div className={`w-full md:w-80 border-r border-neutral-800 flex flex-col shrink-0 ${selectedUser ? 'hidden md:flex' : 'flex'}`}>
-        <div className="p-4 border-b border-neutral-800">
-          <h2 className="font-bold text-lg">Messages</h2>
+      <div className={`w-full md:w-80 border-r border-slate-100 flex flex-col shrink-0 bg-slate-50 ${selectedUser ? 'hidden md:flex' : 'flex'}`}>
+        <div className="p-6 border-b border-slate-100 bg-white">
+          <h2 className="font-black text-2xl text-slate-800 text-transparent bg-clip-text bg-gradient-to-r from-violet-500 to-fuchsia-500">Messages</h2>
         </div>
         <div className="flex-1 overflow-y-auto">
           {users.map(u => (
             <button 
               key={u.id}
               onClick={() => setSelectedUser(u)}
-              className={`w-full text-left p-4 flex items-center space-x-3 hover:bg-neutral-800 transition-colors border-b border-neutral-800/50 ${selectedUser?.id === u.id ? 'bg-neutral-800/80' : ''}`}
+              className={`w-full text-left p-4 flex items-center space-x-4 transition-colors border-b border-slate-100/50 ${selectedUser?.id === u.id ? 'bg-violet-50 border-violet-100' : 'hover:bg-slate-100/50'}`}
             >
-              <div className="w-10 h-10 rounded-full bg-neutral-700 flex items-center justify-center shrink-0">
-                {u.avatarUrl ? <img src={u.avatarUrl} alt="Avatar" className="w-full h-full object-cover rounded-full" /> : <UserIcon className="w-5 h-5 text-neutral-400" />}
+              <div className="w-12 h-12 rounded-full bg-violet-100 border border-white shadow-sm flex items-center justify-center shrink-0">
+                {u.avatarUrl ? <img src={u.avatarUrl} alt="Avatar" className="w-full h-full object-cover rounded-full" /> : <UserIcon className="w-6 h-6 text-violet-500" />}
               </div>
               <div className="truncate">
-                <div className="font-medium truncate">{u.firstName} {u.lastName}</div>
-                <div className="text-xs text-neutral-500 truncate">@{u.username}</div>
+                <div className="font-bold text-slate-800 truncate">{u.firstName} {u.lastName}</div>
+                <div className="text-xs font-semibold text-slate-500 truncate">@{u.username}</div>
               </div>
             </button>
           ))}
@@ -94,33 +94,34 @@ export default function Messages({ user }: { user: any }) {
       </div>
 
       {/* Main Chat Area */}
-      <div className={`flex-1 flex flex-col ${!selectedUser ? 'hidden md:flex' : 'flex'}`}>
+      <div className={`flex-1 flex flex-col bg-white ${!selectedUser ? 'hidden md:flex' : 'flex'}`}>
         {selectedUser ? (
           <>
-            <div className="p-4 border-b border-neutral-800 flex items-center space-x-3 bg-neutral-950">
+            <div className="p-5 border-b border-slate-100 flex items-center space-x-4 bg-white z-10 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
               <button 
-                className="md:hidden text-emerald-500 font-medium mr-2"
+                className="md:hidden text-violet-500 font-bold mr-2 p-2 rounded-full hover:bg-violet-50"
                 onClick={() => setSelectedUser(null)}
               >
                 &larr;
               </button>
-              <div className="w-8 h-8 rounded-full bg-neutral-800 flex items-center justify-center">
-                 {selectedUser.avatarUrl ? <img src={selectedUser.avatarUrl} alt="Avatar" className="w-full h-full object-cover rounded-full" /> : <UserIcon className="w-4 h-4 text-neutral-400" />}
+              <div className="w-10 h-10 rounded-full bg-violet-100 border border-slate-100 flex items-center justify-center shadow-sm">
+                 {selectedUser.avatarUrl ? <img src={selectedUser.avatarUrl} alt="Avatar" className="w-full h-full object-cover rounded-full" /> : <UserIcon className="w-5 h-5 text-violet-500" />}
               </div>
               <div>
-                <div className="font-medium">{selectedUser.firstName} {selectedUser.lastName}</div>
+                <div className="font-bold text-slate-800">{selectedUser.firstName} {selectedUser.lastName}</div>
               </div>
             </div>
             
-            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-neutral-950">
+            <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-slate-50 relative">
+              <div className="absolute inset-0 bg-[radial-gradient(#e2e8f0_1px,transparent_1px)] [background-size:16px_16px] opacity-50 pointer-events-none"></div>
               {messages.length === 0 ? (
-                <div className="text-center text-neutral-500 mt-10 text-sm">No messages yet. Say hi!</div>
+                <div className="text-center text-slate-400 mt-[20vh] font-medium text-sm relative z-10">Say hi to start a fun conversation! 🎉</div>
               ) : (
                 messages.map(msg => {
                   const isMe = msg.senderId === user.id;
                   return (
-                    <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
-                      <div className={`max-w-[75%] rounded-2xl p-3 px-4 ${isMe ? 'bg-emerald-500 text-white rounded-br-none' : 'bg-neutral-800 text-neutral-100 rounded-bl-none'}`}>
+                    <div key={msg.id} className={`flex relative z-10 ${isMe ? 'justify-end' : 'justify-start'}`}>
+                      <div className={`max-w-[75%] rounded-3xl p-4 px-5 text-sm font-medium shadow-sm ${isMe ? 'bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white rounded-br-none' : 'bg-white text-slate-800 border border-slate-100 rounded-bl-none'}`}>
                         {msg.content}
                       </div>
                     </div>
@@ -130,25 +131,26 @@ export default function Messages({ user }: { user: any }) {
               <div ref={messagesEndRef} />
             </div>
 
-            <div className="p-4 border-t border-neutral-800 bg-neutral-950">
-              <form onSubmit={sendMessage} className="flex space-x-2">
+            <div className="p-5 border-t border-slate-100 bg-white">
+              <form onSubmit={sendMessage} className="flex space-x-3">
                 <input 
                   type="text" 
                   value={newMessage}
                   onChange={e => setNewMessage(e.target.value)}
-                  className="flex-1 bg-neutral-900 border border-neutral-800 rounded-full px-4 py-2 text-white outline-none focus:border-emerald-500"
+                  className="flex-1 bg-slate-50 border-2 border-slate-100 rounded-full px-6 py-3 text-slate-900 font-medium outline-none focus:border-violet-500 focus:ring-4 focus:ring-violet-500/20 transition-all placeholder:text-slate-400"
                   placeholder="Type a message..."
                 />
-                <button type="submit" disabled={!newMessage.trim()} className="bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white w-10 h-10 rounded-full flex items-center justify-center shrink-0 transition-colors">
-                  <Send className="w-4 h-4" />
+                <button type="submit" disabled={!newMessage.trim()} className="bg-gradient-to-r from-violet-500 to-fuchsia-500 hover:from-violet-600 hover:to-fuchsia-600 disabled:opacity-50 disabled:hover:scale-100 text-white w-12 h-12 rounded-full flex items-center justify-center shrink-0 transition-transform transform hover:scale-105 shadow-md shadow-violet-200">
+                  <Send className="w-5 h-5 ml-0.5" />
                 </button>
               </form>
             </div>
           </>
         ) : (
-          <div className="flex-1 flex flex-col items-center justify-center text-neutral-500 bg-neutral-950">
-            <MessageCircleIcon className="w-16 h-16 mb-4 text-neutral-800" />
-            <p>Select a conversation to start chatting</p>
+          <div className="flex-1 flex flex-col items-center justify-center text-slate-400 bg-slate-50 relative overflow-hidden">
+            <div className="absolute inset-0 bg-[radial-gradient(#e2e8f0_1px,transparent_1px)] [background-size:16px_16px] opacity-70 pointer-events-none"></div>
+            <MessageCircleIcon className="w-20 h-20 mb-6 text-slate-200 relative z-10" />
+            <p className="font-medium text-lg relative z-10">Select a conversation to start chatting</p>
           </div>
         )}
       </div>

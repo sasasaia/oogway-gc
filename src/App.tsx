@@ -11,6 +11,7 @@ import Activities from './pages/Activities.js';
 import MiniGames from './pages/MiniGames.js';
 import Messages from './pages/Messages.js';
 import Profile from './pages/Profile.js';
+import Settings from './pages/Settings.js';
 import Login from './pages/Login.js';
 import Register from './pages/Register.js';
 
@@ -25,6 +26,17 @@ export default function App() {
       setIsAuthenticated(true);
       setUser(JSON.parse(storedUser));
     }
+
+    const themeMode = localStorage.getItem('themeMode') || 'system';
+    const colorTheme = localStorage.getItem('colorTheme') || 'violet';
+    const isDark = themeMode === 'dark' || (themeMode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    
+    if (isDark) {
+      document.documentElement.setAttribute('data-theme', 'dark');
+    } else {
+      document.documentElement.removeAttribute('data-theme');
+    }
+    document.documentElement.setAttribute('data-color', colorTheme);
   }, []);
 
   const handleLogin = (token: string, userData: any) => {
@@ -54,6 +66,7 @@ export default function App() {
           <Route path="/minigames" element={<MiniGames />} />
           <Route path="/messages" element={<Messages user={user!} />} />
           <Route path="/profile" element={<Profile user={user!} />} />
+          <Route path="/settings" element={<Settings />} />
         </Route>
       </Routes>
     </BrowserRouter>

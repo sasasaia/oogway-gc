@@ -68,23 +68,23 @@ export default function Activities({ user }: { user: any }) {
     <div className="max-w-5xl mx-auto">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Schedule & Activities</h1>
-          <p className="text-neutral-400 text-sm">Track events and calendar items</p>
+          <h1 className="text-3xl font-black tracking-tight text-slate-800">Schedule & Activities</h1>
+          <p className="text-slate-500 font-medium mt-1">Track your fun events and calendar items</p>
         </div>
         <button 
           onClick={() => setShowModal(true)}
-          className="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 flex items-center space-x-2 rounded-xl font-medium transition-colors"
+          className="bg-gradient-to-r from-violet-500 to-fuchsia-500 hover:from-violet-600 hover:to-fuchsia-600 text-white px-5 py-2.5 flex items-center space-x-2 rounded-full font-bold transition-all shadow-md shadow-violet-200 transform hover:scale-[1.02]"
         >
-          <Plus className="w-4 h-4" />
+          <Plus className="w-5 h-5" />
           <span>Add Activity</span>
         </button>
       </div>
 
-      <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-4 mb-6 flex flex-col sm:flex-row gap-4">
-        <div className="flex-1 flex items-center space-x-2 bg-neutral-950 px-3 py-2 rounded-xl border border-neutral-800">
-          <Filter className="w-4 h-4 text-neutral-500" />
+      <div className="bg-white border border-slate-100 shadow-sm rounded-3xl p-4 mb-8 flex flex-col sm:flex-row gap-4">
+        <div className="flex-1 flex items-center space-x-3 bg-slate-50 px-4 py-3 rounded-2xl border border-slate-100">
+          <Filter className="w-5 h-5 text-slate-400" />
           <select 
-            className="bg-transparent border-none focus:ring-0 text-sm w-full outline-none"
+            className="bg-transparent border-none focus:ring-0 text-sm w-full outline-none text-slate-700 font-semibold cursor-pointer"
             value={filterCategory}
             onChange={(e) => setFilterCategory(e.target.value)}
           >
@@ -92,36 +92,39 @@ export default function Activities({ user }: { user: any }) {
             {categories.map(c => <option key={c} value={c}>{c}</option>)}
           </select>
         </div>
-        <div className="flex-1 flex items-center space-x-2 bg-neutral-950 px-3 py-2 rounded-xl border border-neutral-800">
+        <div className="flex-1 flex items-center space-x-3 bg-slate-50 px-4 py-3 rounded-2xl border border-slate-100">
           <UserFilterSelect value={filterUser} onChange={setFilterUser} users={users} />
         </div>
       </div>
 
       <div className="space-y-4">
         {filteredActivities.length === 0 ? (
-          <div className="text-center py-12 text-neutral-500">No activities found matching filters.</div>
+          <div className="bg-white border border-slate-100 rounded-3xl p-10 text-center shadow-sm">
+            <p className="text-slate-800 font-bold text-lg mb-2">No activities found.</p>
+            <p className="text-slate-500">Wait, are we not doing anything fun?</p>
+          </div>
         ) : (
           filteredActivities.map(activity => (
-            <div key={activity.id} className="bg-neutral-900 border border-neutral-800 rounded-2xl p-4 flex flex-col md:flex-row gap-4 items-start md:items-center group hover:border-neutral-700 transition-colors">
-              <div className="bg-neutral-950 border border-neutral-800 rounded-xl p-3 shrink-0 text-center min-w-[80px]">
-                <div className="text-xs text-emerald-500 font-bold uppercase">{format(parseISO(activity.startTime), 'MMM')}</div>
-                <div className="text-2xl font-bold">{format(parseISO(activity.startTime), 'dd')}</div>
+            <div key={activity.id} className="bg-white border border-slate-100 rounded-3xl p-5 flex flex-col md:flex-row gap-5 items-start md:items-center group hover:shadow-md transition-all">
+              <div className="bg-violet-50 border border-violet-100 rounded-2xl p-3 shrink-0 text-center min-w-[80px]">
+                <div className="text-xs text-violet-600 font-bold uppercase tracking-wider">{format(parseISO(activity.startTime), 'MMM')}</div>
+                <div className="text-2xl font-black text-violet-700">{format(parseISO(activity.startTime), 'dd')}</div>
               </div>
               <div className="flex-1">
-                <div className="flex items-center space-x-2 mb-1">
-                  <h3 className="font-bold text-lg">{activity.title}</h3>
-                  {activity.category && <span className="text-xs bg-neutral-800 px-2 py-0.5 rounded-full text-neutral-300">{activity.category}</span>}
+                <div className="flex items-center space-x-3 mb-1.5">
+                  <h3 className="font-bold text-xl text-slate-800">{activity.title}</h3>
+                  {activity.category && <span className="text-xs bg-fuchsia-100 px-2.5 py-1 rounded-full text-fuchsia-700 font-bold">{activity.category}</span>}
                 </div>
-                <div className="text-neutral-400 text-sm flex items-center space-x-2">
-                  <CalendarIcon className="w-3.5 h-3.5" />
+                <div className="text-slate-500 text-sm font-medium flex items-center space-x-2">
+                  <CalendarIcon className="w-4 h-4 text-slate-400" />
                   <span>{format(parseISO(activity.startTime), 'h:mm a')} - {format(parseISO(activity.endTime), 'h:mm a')}</span>
                 </div>
               </div>
-              <div className="flex items-center space-x-2 mt-4 md:mt-0">
-                <div className="w-6 h-6 rounded-full bg-neutral-800 text-[10px] font-bold flex items-center justify-center shrink-0" title={`${activity.user.firstName} ${activity.user.lastName}`}>
+              <div className="flex items-center space-x-2 mt-4 md:mt-0 bg-slate-50 pl-2 pr-4 py-2 rounded-full border border-slate-100">
+                <div className="w-8 h-8 rounded-full bg-violet-100 text-sm text-violet-600 font-black flex items-center justify-center shrink-0" title={`${activity.user.firstName} ${activity.user.lastName}`}>
                   {activity.user.firstName[0]}
                 </div>
-                <span className="text-sm text-neutral-500">{activity.user.firstName}</span>
+                <span className="text-sm font-bold text-slate-700">{activity.user.firstName}</span>
               </div>
             </div>
           ))
@@ -129,33 +132,33 @@ export default function Activities({ user }: { user: any }) {
       </div>
 
       {showModal && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-          <div className="bg-neutral-900 rounded-2xl max-w-md w-full border border-neutral-800 overflow-hidden">
-            <div className="p-4 border-b border-neutral-800 flex justify-between items-center">
-              <h2 className="font-bold text-lg">Add Activity</h2>
-              <button onClick={() => setShowModal(false)} className="text-neutral-400 hover:text-white p-1"><X className="w-5 h-5"/></button>
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+          <div className="bg-white rounded-[2rem] max-w-md w-full border border-slate-100 shadow-2xl overflow-hidden transform transition-all">
+            <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+              <h2 className="font-black text-xl text-slate-800">Add Activity</h2>
+              <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-slate-600 hover:bg-slate-200 p-1.5 rounded-full transition-colors"><X className="w-5 h-5"/></button>
             </div>
-            <form onSubmit={handleCreateActivity} className="p-4 space-y-4">
+            <form onSubmit={handleCreateActivity} className="p-6 space-y-5">
               <div>
-                <label className="block text-sm text-neutral-400 mb-1">Title</label>
-                <input required type="text" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-3 py-2 text-white outline-none focus:border-emerald-500" placeholder="E.g., Team Meeting" />
+                <label className="block text-sm font-bold text-slate-700 mb-2 ml-1">Title</label>
+                <input required type="text" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-4 py-3 text-slate-900 font-medium outline-none focus:border-violet-500 focus:ring-4 focus:ring-violet-500/20 transition-all placeholder:text-slate-400" placeholder="E.g., Pizza Party" />
               </div>
               <div>
-                <label className="block text-sm text-neutral-400 mb-1">Category (Optional)</label>
-                <input type="text" value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})} className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-3 py-2 text-white outline-none focus:border-emerald-500" placeholder="E.g., Work, Social" />
+                <label className="block text-sm font-bold text-slate-700 mb-2 ml-1">Category (Optional)</label>
+                <input type="text" value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})} className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-4 py-3 text-slate-900 font-medium outline-none focus:border-violet-500 focus:ring-4 focus:ring-violet-500/20 transition-all placeholder:text-slate-400" placeholder="E.g., Social, Work" />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                   <label className="block text-sm text-neutral-400 mb-1">Start Time</label>
-                   <input required type="datetime-local" value={formData.startTime} onChange={e => setFormData({...formData, startTime: e.target.value})} className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-3 py-2 text-white outline-none focus:border-emerald-500 [color-scheme:dark]" />
+                   <label className="block text-sm font-bold text-slate-700 mb-2 ml-1">Start Time</label>
+                   <input required type="datetime-local" value={formData.startTime} onChange={e => setFormData({...formData, startTime: e.target.value})} className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-4 py-3 text-slate-900 font-medium outline-none focus:border-violet-500 focus:ring-4 focus:ring-violet-500/20 transition-all" />
                 </div>
                 <div>
-                   <label className="block text-sm text-neutral-400 mb-1">End Time</label>
-                   <input required type="datetime-local" value={formData.endTime} onChange={e => setFormData({...formData, endTime: e.target.value})} className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-3 py-2 text-white outline-none focus:border-emerald-500 [color-scheme:dark]" />
+                   <label className="block text-sm font-bold text-slate-700 mb-2 ml-1">End Time</label>
+                   <input required type="datetime-local" value={formData.endTime} onChange={e => setFormData({...formData, endTime: e.target.value})} className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-4 py-3 text-slate-900 font-medium outline-none focus:border-violet-500 focus:ring-4 focus:ring-violet-500/20 transition-all" />
                 </div>
               </div>
-              <div className="mt-6">
-                <button type="submit" className="w-full bg-emerald-500 text-white rounded-xl py-2 font-medium hover:bg-emerald-600 transition-colors">Save Activity</button>
+              <div className="mt-8 pt-2">
+                <button type="submit" className="w-full bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white rounded-2xl py-3.5 font-bold hover:from-violet-600 hover:to-fuchsia-600 transition-all shadow-lg shadow-violet-200 transform hover:scale-[1.02]">Save Activity</button>
               </div>
             </form>
           </div>
@@ -168,9 +171,9 @@ export default function Activities({ user }: { user: any }) {
 function UserFilterSelect({ value, onChange, users }: { value: string, onChange: (val:string)=>void, users: any[] }) {
   return (
     <>
-      <UserPlus className="w-4 h-4 text-neutral-500" />
+      <UserPlus className="w-5 h-5 text-slate-400" />
       <select 
-        className="bg-transparent border-none focus:ring-0 text-sm w-full outline-none"
+        className="bg-transparent border-none focus:ring-0 text-sm w-full outline-none text-slate-700 font-semibold cursor-pointer"
         value={value}
         onChange={(e) => onChange(e.target.value)}
       >

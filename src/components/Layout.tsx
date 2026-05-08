@@ -1,5 +1,5 @@
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { Home, CalendarDays, Gamepad2, MessageCircle, User, Bell, LogOut, Search } from 'lucide-react';
+import { Home, CalendarDays, Gamepad2, MessageCircle, User, Bell, LogOut, Settings as SettingsIcon } from 'lucide-react';
 
 export default function Layout({ user, onLogout }: { user: any, onLogout: () => void }) {
   const location = useLocation();
@@ -10,27 +10,29 @@ export default function Layout({ user, onLogout }: { user: any, onLogout: () => 
     { name: 'Mini Games', path: '/minigames', icon: Gamepad2 },
     { name: 'Messages', path: '/messages', icon: MessageCircle },
     { name: 'Profile', path: '/profile', icon: User },
+    { name: 'Settings', path: '/settings', icon: SettingsIcon },
   ];
 
   return (
-    <div className="flex bg-neutral-950 text-neutral-50 h-screen overflow-hidden font-sans">
+    <div className="flex bg-slate-50 text-slate-900 h-screen overflow-hidden font-sans">
       {/* Sidebar */}
-      <aside className="w-64 border-r border-neutral-800 flex flex-col hidden md:flex shrink-0">
-        <div className="p-6">
-          <h1 className="text-2xl font-bold tracking-tighter text-emerald-500">OOGWAY</h1>
+      <aside className="w-64 bg-white border-r border-slate-100 flex flex-col hidden md:flex shrink-0 shadow-sm z-10 relative">
+        <div className="p-6 pb-2">
+          <h1 className="text-3xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-violet-500 to-fuchsia-500">OOGWAY</h1>
         </div>
-        <nav className="flex-1 px-4 space-y-2 mt-4">
+        <nav className="flex-1 px-4 space-y-1.5 mt-6">
           {navItems.map((item) => {
             const isActive = location.pathname === item.path;
+            const activeClasses = isActive
+              ? 'bg-violet-100 text-violet-700 font-bold shadow-sm shadow-violet-100/50'
+              : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900 font-semibold';
             return (
               <Link
                 key={item.name}
                 to={item.path}
-                className={`flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 ${
-                  isActive ? 'bg-emerald-500/10 text-emerald-400 font-medium' : 'text-neutral-400 hover:bg-neutral-900 hover:text-neutral-200'
-                }`}
+                className={`flex items-center space-x-3 px-4 py-3 rounded-2xl transition-all duration-300 ${activeClasses}`}
               >
-                <item.icon className="w-5 h-5" />
+                <item.icon className={`w-5 h-5 ${isActive ? 'text-violet-600' : 'text-slate-400'}`} />
                 <span>{item.name}</span>
               </Link>
             )
@@ -39,49 +41,50 @@ export default function Layout({ user, onLogout }: { user: any, onLogout: () => 
       </aside>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col h-full overflow-hidden">
+      <div className="flex-1 flex flex-col h-full overflow-hidden relative">
         {/* Topbar */}
-        <header className="h-16 border-b border-neutral-800 flex items-center justify-between px-6 shrink-0">
-          <div className="flex items-center space-x-3">
-            {/* Mobile menu could go here */}
-            <div className="w-8 h-8 rounded-full bg-neutral-800 flex items-center justify-center overflow-hidden">
-              {user?.avatarUrl ? <img src={user.avatarUrl} alt="Avatar" className="w-full h-full object-cover" /> : <User className="w-4 h-4 text-neutral-400" />}
+        <header className="h-20 bg-white/80 backdrop-blur-xl border-b border-slate-100 flex items-center justify-between px-6 shrink-0 z-20">
+          <div className="flex items-center space-x-4">
+            <div className="w-10 h-10 rounded-full bg-violet-100 flex items-center justify-center overflow-hidden border-2 border-white shadow-sm">
+              {user?.avatarUrl ? <img src={user.avatarUrl} alt="Avatar" className="w-full h-full object-cover" /> : <User className="w-5 h-5 text-violet-600" />}
             </div>
-            <span className="font-medium">{user?.firstName} {user?.lastName}</span>
-            <span className="text-sm text-neutral-500">@{user?.username}</span>
+            <div className="flex flex-col">
+              <span className="font-bold text-slate-800 leading-tight">{user?.firstName} {user?.lastName}</span>
+              <span className="text-xs font-semibold text-slate-400">@{user?.username}</span>
+            </div>
           </div>
 
-          <div className="flex items-center space-x-4 text-neutral-400">
-            <button className="p-2 hover:bg-neutral-900 rounded-full transition-colors relative">
+          <div className="flex items-center space-x-3">
+            <button className="p-2.5 bg-slate-50 text-slate-500 hover:bg-slate-100 rounded-full transition-colors relative shadow-sm">
               <Bell className="w-5 h-5" />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-emerald-500 rounded-full"></span>
+              <span className="absolute top-1 right-2 w-2.5 h-2.5 bg-fuchsia-500 border-2 border-white rounded-full"></span>
             </button>
-            <button onClick={onLogout} className="p-2 hover:bg-neutral-900 rounded-full transition-colors text-red-400 hover:text-red-300">
+            <button onClick={onLogout} className="p-2.5 bg-red-50 text-red-500 hover:bg-red-100 hover:text-red-600 rounded-full transition-colors shadow-sm">
               <LogOut className="w-5 h-5" />
             </button>
           </div>
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 overflow-y-auto p-4 md:p-6 pb-20 md:pb-6">
+        <main className="flex-1 overflow-y-auto p-4 md:p-8 pb-24 md:pb-8">
           <Outlet />
         </main>
       </div>
 
       {/* Mobile Bottom Nav */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-neutral-950 border-t border-neutral-800 px-4 py-3 flex justify-between items-center z-50">
+      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-100 px-4 py-3 flex justify-between items-center z-50 shadow-[0_-4px_20px_rgba(0,0,0,0.02)]">
          {navItems.map((item) => {
             const isActive = location.pathname === item.path;
             return (
               <Link
                 key={item.name}
                 to={item.path}
-                className={`p-2 rounded-xl flex flex-col items-center ${
-                  isActive ? 'text-emerald-400' : 'text-neutral-500'
+                className={`flex-1 p-2 rounded-2xl flex flex-col items-center transition-all ${
+                  isActive ? 'text-violet-600 scale-110' : 'text-slate-400 hover:text-slate-600'
                 }`}
               >
-                <item.icon className="w-6 h-6 mb-1" />
-                <span className="text-[10px]">{item.name}</span>
+                <item.icon className={`w-6 h-6 mb-1 ${isActive ? 'fill-violet-50 stroke-violet-600' : ''}`} />
+                <span className={`text-[10px] font-semibold ${isActive ? 'opacity-100' : 'opacity-0 h-0 w-0 overflow-hidden'}`}>{item.name}</span>
               </Link>
             )
           })}

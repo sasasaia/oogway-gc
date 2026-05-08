@@ -1,145 +1,97 @@
-import pkg from 'pg';
-const { Pool } = pkg;
-import Database from 'better-sqlite3';
+import sql from 'mssql';
 
-const isProduction = !!process.env.POSTGRES_URL;
+const connectionString = process.env.MSSQL_URL || process.env.DATABASE_URL;
 
-let pool: any = null;
-let sqliteDb: any = null;
-
-if (isProduction) {
-  pool = new Pool({
-    connectionString: process.env.POSTGRES_URL,
-    ssl: { rejectUnauthorized: false }
-  });
-} else {
-  // Use better-sqlite3 for local development
-  sqliteDb = new Database('oogway.db'); // local directory
-  sqliteDb.pragma('journal_mode = WAL');
+if (!connectionString) {
+  console.warn("⚠️ MSSQL_URL environment variable is not defined.");
+  console.warn("Please add MSSQL_URL or DATABASE_URL to your environment secrets to use the SQL Server.");
 }
 
-export async function query(sql: string, params: any[] = []): Promise<any[]> {
-  if (isProduction) {
-    const res = await pool.query(sql, params);
-    return res.rows;
-  } else {
-    // Convert Postgres $1, $2 positional params to SQLite ? params
-    const sqliteSql = sql.replace(/\$\d+/g, '?');
-    const stmt = sqliteDb.prepare(sqliteSql);
-    try {
-      // If it's a SELECT or has RETURNING, we use .all()
-      if (sqliteSql.trim().toUpperCase().startsWith('SELECT') || sqliteSql.trim().toUpperCase().includes('RETURNING')) {
-        return stmt.all(...params);
-      } else {
-        const info = stmt.run(...params);
-        return [{ id: info.lastInsertRowid, insertId: info.lastInsertRowid, changes: info.changes }];
-      }
-    } catch(err) {
-      console.error("SQL Error. Query: ", sqliteSql, "Params: ", params, "Error: ", err);
+let poolPromise: Promise<sql.ConnectionPool> | null = null;
+
+if (connectionString) {
+  poolPromise = sql.connect(connectionString).catch(err => {
+      console.error("Database Connection Failed! Bad Config: ", err);
       throw err;
-    }
+  });
+}
+
+export async function query(sqlQuery: string, params: any[] = []): Promise<any[]> {
+  if (!poolPromise) {
+    throw new Error("Database not connected. Please set MSSQL_URL environment variable.");
+  }
+  const pool = await poolPromise;
+  
+  try {
+    const request = pool.request();
+    params.forEach((param, index) => {
+      request.input(`p${index + 1}`, param);
+    });
+    
+    const result = await request.query(sqlQuery);
+    return result.recordset || [];
+  } catch (err) {
+    console.error("SQL Error. Query:", sqlQuery, "Params:", params, "Error:", err);
+    throw err;
   }
 }
 
 export async function initDb() {
-  if (isProduction) {
-    await query(`
-      CREATE TABLE IF NOT EXISTS users (
-          id SERIAL PRIMARY KEY,
-          first_name VARCHAR(255) NOT NULL,
-          last_name VARCHAR(255) NOT NULL,
-          username VARCHAR(255) UNIQUE NOT NULL,
-          password_hash VARCHAR(255) NOT NULL,
-          avatar_url VARCHAR(1024),
-          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  if (!poolPromise) return;
+  const pool = await poolPromise;
+
+  await pool.request().query(`
+    IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='users' and xtype='U')
+    CREATE TABLE users (
+        id INT IDENTITY(1,1) PRIMARY KEY,
+        first_name VARCHAR(255) NOT NULL,
+        last_name VARCHAR(255) NOT NULL,
+        username VARCHAR(255) UNIQUE NOT NULL,
+        password_hash VARCHAR(255) NOT NULL,
+        avatar_url VARCHAR(1024),
+        created_at DATETIME DEFAULT GETDATE()
+    );
+  `);
+  await pool.request().query(`
+      IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='follows' and xtype='U')
+      CREATE TABLE follows (
+          follower_id INT REFERENCES users(id) ON DELETE NO ACTION,
+          following_id INT REFERENCES users(id) ON DELETE NO ACTION,
+          created_at DATETIME DEFAULT GETDATE(),
+          PRIMARY KEY (follower_id, following_id)
       );
-    `);
-    await query(`
-        CREATE TABLE IF NOT EXISTS follows (
-            follower_id INT REFERENCES users(id) ON DELETE CASCADE,
-            following_id INT REFERENCES users(id) ON DELETE CASCADE,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            PRIMARY KEY (follower_id, following_id)
-        );
-    `);
-    await query(`
-        CREATE TABLE IF NOT EXISTS posts (
-            id SERIAL PRIMARY KEY,
-            user_id INT REFERENCES users(id) ON DELETE CASCADE,
-            content TEXT,
-            image_url VARCHAR(1024),
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        );
-    `);
-    await query(`
-        CREATE TABLE IF NOT EXISTS activities (
-            id SERIAL PRIMARY KEY,
-            user_id INT REFERENCES users(id) ON DELETE CASCADE,
-            title VARCHAR(255) NOT NULL,
-            category VARCHAR(100),
-            start_time TIMESTAMP NOT NULL,
-            end_time TIMESTAMP NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        );
-    `);
-    await query(`
-        CREATE TABLE IF NOT EXISTS messages (
-            id SERIAL PRIMARY KEY,
-            sender_id INT REFERENCES users(id) ON DELETE CASCADE,
-            receiver_id INT REFERENCES users(id) ON DELETE CASCADE,
-            content TEXT NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        );
-    `);
-  } else {
-    // SQLite initialization
-    await query(`
-      CREATE TABLE IF NOT EXISTS users (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          first_name TEXT NOT NULL,
-          last_name TEXT NOT NULL,
-          username TEXT UNIQUE NOT NULL,
-          password_hash TEXT NOT NULL,
-          avatar_url TEXT,
-          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
-    await query(`
-        CREATE TABLE IF NOT EXISTS follows (
-            follower_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-            following_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            PRIMARY KEY (follower_id, following_id)
-        )
-    `);
-    await query(`
-        CREATE TABLE IF NOT EXISTS posts (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-            content TEXT,
-            image_url TEXT,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        )
-    `);
-    await query(`
-        CREATE TABLE IF NOT EXISTS activities (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-            title TEXT NOT NULL,
-            category TEXT,
-            start_time DATETIME NOT NULL,
-            end_time DATETIME NOT NULL,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        )
-    `);
-    await query(`
-        CREATE TABLE IF NOT EXISTS messages (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            sender_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-            receiver_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-            content TEXT NOT NULL,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        )
-    `);
-  }
+  `);
+  await pool.request().query(`
+      IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='posts' and xtype='U')
+      CREATE TABLE posts (
+          id INT IDENTITY(1,1) PRIMARY KEY,
+          user_id INT REFERENCES users(id) ON DELETE CASCADE,
+          content TEXT,
+          image_url VARCHAR(1024),
+          created_at DATETIME DEFAULT GETDATE()
+      );
+  `);
+  await pool.request().query(`
+      IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='activities' and xtype='U')
+      CREATE TABLE activities (
+          id INT IDENTITY(1,1) PRIMARY KEY,
+          user_id INT REFERENCES users(id) ON DELETE CASCADE,
+          title VARCHAR(255) NOT NULL,
+          category VARCHAR(100),
+          start_time DATETIME NOT NULL,
+          end_time DATETIME NOT NULL,
+          created_at DATETIME DEFAULT GETDATE()
+      );
+  `);
+  await pool.request().query(`
+      IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='messages' and xtype='U')
+      CREATE TABLE messages (
+          id INT IDENTITY(1,1) PRIMARY KEY,
+          sender_id INT REFERENCES users(id) ON DELETE NO ACTION,
+          receiver_id INT REFERENCES users(id) ON DELETE NO ACTION,
+          content TEXT NOT NULL,
+          created_at DATETIME DEFAULT GETDATE()
+      );
+  `);
+  console.log("SQL Database initialized successfully.");
 }
