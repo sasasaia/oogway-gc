@@ -1,0 +1,9 @@
+{
+  "name": "OOGWAY",
+  "description": "A social media website with home feed, activities, mini games, messages, and profile sections.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ],
+  "majorCapabilities": []
+}
