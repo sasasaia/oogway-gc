@@ -37,20 +37,23 @@ declare global {
 const app = express();
 app.use(express.json({ limit: '10mb' }));
 
-// Initialize DB Connection
-let pool: sql.ConnectionPool | null = null;
-app.use(async (req, res, next) => {
-  // Only attempt DB connection if env variables are provided
-  if (process.env.DB_HOST && !pool) {
-    try {
-      pool = await sql.connect(dbConfig);
-      console.log('Connected to MS SQL Server');
-    } catch (err) {
-      console.error('Database connection failed:', err);
-    }
+async function getPool() {
+  if (pool) return pool;
+  if (process.env.DB_HOST) {
+    pool = await sql.connect(dbConfig);
+    return pool;
   }
-  req.db = pool;
-  next();
+  return null;
+}
+
+app.use(async (req, res, next) => {
+  try {
+    req.db = await getPool();
+    next();
+  } catch (err) {
+    console.error("DB connection error", err);
+    next(); // Continue so mock logic can take over if pool is null
+  }
 });
 // Auth Middleware
 const authenticateToken = (req: express.Request, res: express.Response, next: express.NextFunction) => {
@@ -321,20 +324,5 @@ app.post("/api/notifications/read", authenticateToken, async (req, res) => {
     res.status(500).json({ error: String(err) });
   }
 });
-// Vite middleware for development
-if (process.env.NODE_ENV !== "production") {
-  const vite = await createViteServer({
-    server: { middlewareMode: true },
-    appType: "spa",
-  });
-  app.use(vite.middlewares);
-} else {
-  // Note: for typical Vercel deployment, Vercel handles static files and serverless functions separately.
-  const distPath = path.join(process.cwd(), 'dist');
-  app.use(express.static(distPath));
-  app.get('*all', (req, res) => {
-    res.sendFile(path.join(distPath, 'index.html'));
-  });
-}
 
 export default app;
