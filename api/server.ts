@@ -130,7 +130,7 @@ app.get("/api/me", authenticateToken, async (req, res) => {
     if (!pool) return res.json({ user: { id: req.user!.id, username: req.user!.username, firstName: 'Mock', lastName: 'User', avatar: null, bio: 'Mock User', location: 'Earth', website: '' } });
     const request = pool.request();
     request.input('id', sql.Int, req.user!.id);
-    const result = await request.query('SELECT Id, Username, Email, FirstName, LastName, Avatar, Bio, Location, Website, CreatedAt FROM Users WHERE Id = @id');
+    const result = await request.query('SELECT Id as id, Username as username, Email as email, FirstName as firstName, LastName as lastName, Avatar as avatar, Bio as bio, Location as location, Website as website, CreatedAt as createdAt FROM Users WHERE Id = @id');
     
     if (result.recordset.length === 0) return res.status(404).json({ error: 'User not found' });
     res.json({ user: result.recordset[0] });
