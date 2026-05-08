@@ -40,7 +40,7 @@ export const Login: React.FC = () => {
         <div className="flex justify-center mb-6">
           <div className="w-12 h-12 bg-[var(--color-primary)] rounded-full flex items-center justify-center text-white font-bold text-2xl">O</div>
         </div>
-        <h1 className="text-2xl font-bold text-center mb-6 text-[var(--color-base-text)]">Sign in to Orb</h1>
+        <h1 className="text-2xl font-bold text-center mb-6 text-[var(--color-base-text)]">Sign in to OOGWAY</h1>
         
         {error && <div className="bg-red-500/10 text-red-500 p-3 rounded-lg text-sm mb-4">{error}</div>}
         

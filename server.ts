@@ -79,27 +79,29 @@ async function startServer() {
   // --- Auth --- //
   app.post("/api/register", async (req, res) => {
     try {
-      const { username, email, password } = req.body;
-      if (!username || !email || !password) return res.status(400).json({ error: 'Missing fields' });
+      const { username, email, password, firstName, lastName } = req.body;
+      if (!username || !email || !password || !firstName || !lastName) return res.status(400).json({ error: 'Missing fields' });
       
       const hashedPassword = await bcrypt.hash(password, 10);
       
-      if (!pool) return res.json({ token: jwt.sign({ id: 1, username }, JWT_SECRET), user: { id: 1, username } });
+      if (!pool) return res.json({ token: jwt.sign({ id: 1, username }, JWT_SECRET), user: { id: 1, username, firstName, lastName } });
 
       const request = pool.request();
       request.input('username', sql.NVarChar, username);
       request.input('email', sql.NVarChar, email);
       request.input('password', sql.NVarChar, hashedPassword);
+      request.input('firstName', sql.NVarChar, firstName);
+      request.input('lastName', sql.NVarChar, lastName);
       
       const result = await request.query(`
-        INSERT INTO Users (Username, Email, PasswordHash)
-        OUTPUT INSERTED.Id, INSERTED.Username, INSERTED.Email
-        VALUES (@username, @email, @password)
+        INSERT INTO Users (Username, Email, PasswordHash, FirstName, LastName)
+        OUTPUT INSERTED.Id, INSERTED.Username, INSERTED.Email, INSERTED.FirstName, INSERTED.LastName
+        VALUES (@username, @email, @password, @firstName, @lastName)
       `);
       
       const user = result.recordset[0];
       const token = jwt.sign({ id: user.Id, username: user.Username }, JWT_SECRET, { expiresIn: '7d' });
-      res.json({ token, user: { id: user.Id, username: user.Username, email: user.Email } });
+      res.json({ token, user: { id: user.Id, username: user.Username, email: user.Email, firstName: user.FirstName, lastName: user.LastName } });
     } catch (err: any) {
       if (err.message?.includes('Violation of UNIQUE KEY constraint')) {
         return res.status(400).json({ error: 'Username or email already exists' });
@@ -125,7 +127,7 @@ async function startServer() {
       if (!validPass) return res.status(400).json({ error: 'Invalid password' });
       
       const token = jwt.sign({ id: user.Id, username: user.Username }, JWT_SECRET, { expiresIn: '7d' });
-      res.json({ token, user: { id: user.Id, username: user.Username, email: user.Email, avatar: user.Avatar } });
+      res.json({ token, user: { id: user.Id, username: user.Username, email: user.Email, firstName: user.FirstName, lastName: user.LastName, avatar: user.Avatar } });
     } catch (err) {
       res.status(500).json({ error: String(err) });
     }
@@ -133,11 +135,11 @@ async function startServer() {
 
   app.get("/api/me", authenticateToken, async (req, res) => {
     try {
-      if (!pool) return res.json({ user: { id: req.user!.id, username: req.user!.username, avatar: null, bio: 'Mock User', location: 'Earth', website: '' } });
+      if (!pool) return res.json({ user: { id: req.user!.id, username: req.user!.username, firstName: 'Mock', lastName: 'User', avatar: null, bio: 'Mock User', location: 'Earth', website: '' } });
 
       const request = pool.request();
       request.input('id', sql.Int, req.user!.id);
-      const result = await request.query('SELECT Id, Username, Email, Avatar, Bio, Location, Website, CreatedAt FROM Users WHERE Id = @id');
+      const result = await request.query('SELECT Id, Username, Email, FirstName, LastName, Avatar, Bio, Location, Website, CreatedAt FROM Users WHERE Id = @id');
       
       if (result.recordset.length === 0) return res.status(404).json({ error: 'User not found' });
       res.json({ user: result.recordset[0] });

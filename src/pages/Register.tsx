@@ -4,6 +4,8 @@ import { Link } from 'react-router-dom';
 
 export const Register: React.FC = () => {
   const [username, setUsername] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -19,7 +21,7 @@ export const Register: React.FC = () => {
       const res = await fetch('/api/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, email, password })
+        body: JSON.stringify({ username, email, password, firstName, lastName })
       });
       const data = await res.json();
       
@@ -41,11 +43,31 @@ export const Register: React.FC = () => {
         <div className="flex justify-center mb-6">
           <div className="w-12 h-12 bg-[var(--color-primary)] rounded-full flex items-center justify-center text-white font-bold text-2xl">O</div>
         </div>
-        <h1 className="text-2xl font-bold text-center mb-6 text-[var(--color-base-text)]">Create your Orb</h1>
+        <h1 className="text-2xl font-bold text-center mb-6 text-[var(--color-base-text)]">Create your account</h1>
         
         {error && <div className="bg-red-500/10 text-red-500 p-3 rounded-lg text-sm mb-4">{error}</div>}
         
         <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="flex gap-4">
+            <div className="flex-1">
+              <label className="block text-sm font-medium mb-1 opacity-80">First Name</label>
+              <input 
+                required
+                className="w-full bg-black/5 dark:bg-white/5 border border-transparent focus:border-[var(--color-primary)] outline-none rounded-xl px-4 py-3 transition-colors"
+                value={firstName}
+                onChange={e => setFirstName(e.target.value)}
+              />
+            </div>
+            <div className="flex-1">
+              <label className="block text-sm font-medium mb-1 opacity-80">Last Name</label>
+              <input 
+                required
+                className="w-full bg-black/5 dark:bg-white/5 border border-transparent focus:border-[var(--color-primary)] outline-none rounded-xl px-4 py-3 transition-colors"
+                value={lastName}
+                onChange={e => setLastName(e.target.value)}
+              />
+            </div>
+          </div>
           <div>
             <label className="block text-sm font-medium mb-1 opacity-80">Username</label>
             <input 
