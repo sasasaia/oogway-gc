@@ -18,7 +18,7 @@ const dbConfig = {
   },
   options: {
     encrypt: true,
-    trustServerCertificate: process.env.NODE_ENV !== 'production'
+    trustServerCertificate: true
   }
 };
 
