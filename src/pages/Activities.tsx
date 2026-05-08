@@ -1,21 +1,26 @@
 import React, { useState, useEffect } from 'react';
 import { format, startOfWeek, addDays, getMonth, startOfMonth, getDaysInMonth } from 'date-fns';
+import { useAuth } from '../AuthContext';
 
 interface Event {
   id: number;
   title: string;
   date: string;
   visibility: string;
+  author: string;
 }
 
 export const Activities: React.FC = () => {
   const [events, setEvents] = useState<Event[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [newEvent, setNewEvent] = useState({ title: '', date: '', visibility: 'public' });
+  const { token } = useAuth();
 
   const fetchEvents = async () => {
     try {
-      const res = await fetch('/api/events');
+      const res = await fetch('/api/events', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
       const data = await res.json();
       if (data.events) setEvents(data.events);
     } catch (err) {
@@ -24,15 +29,18 @@ export const Activities: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchEvents();
-  }, []);
+    if (token) fetchEvents();
+  }, [token]);
 
   const handleAddEvent = async () => {
     if (!newEvent.title || !newEvent.date) return;
     try {
       await fetch('/api/events', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}` 
+        },
         body: JSON.stringify(newEvent),
       });
       setShowModal(false);
@@ -66,7 +74,7 @@ export const Activities: React.FC = () => {
                 <div className="flex flex-col">
                   <span className="font-bold text-lg">{event.title}</span>
                   <span className="text-sm opacity-70 mt-1">
-                    {format(new Date(event.date), 'PPP p')}
+                    {format(new Date(event.date), 'PPP p')} &bull; by {event.author}
                   </span>
                 </div>
                 <div className="px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider bg-black/5 dark:bg-white/10">

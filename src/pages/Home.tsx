@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { ImagePlus, Send } from 'lucide-react';
+import { useAuth } from '../AuthContext';
 
 interface Post {
   id: number;
+  userId: number;
   author: string;
+  avatar?: string;
   content: string;
   image?: string;
   createdAt: string;
@@ -14,10 +17,13 @@ export const Home: React.FC = () => {
   const [newPost, setNewPost] = useState('');
   const [imageBase64, setImageBase64] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const { token, user } = useAuth();
 
   const fetchPosts = async () => {
     try {
-      const res = await fetch('/api/posts');
+      const res = await fetch('/api/posts', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
       const data = await res.json();
       if (data.posts) setPosts(data.posts);
     } catch (err) {
@@ -26,8 +32,8 @@ export const Home: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchPosts();
-  }, []);
+    if (token) fetchPosts();
+  }, [token]);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -48,9 +54,9 @@ export const Home: React.FC = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
-          author: 'Current User', // Mocked user context for now
           content: newPost,
           image: imageBase64,
         }),
@@ -108,9 +114,13 @@ export const Home: React.FC = () => {
         {posts.map(post => (
           <div key={post.id} className="bg-[var(--color-card-bg)] rounded-2xl shadow-sm border border-[#0000001a] dark:border-[#ffffff1a] p-4 overflow-hidden">
             <div className="flex items-center gap-3 mb-3">
-              <div className="w-10 h-10 rounded-full bg-[var(--color-secondary)] text-white flex items-center justify-center font-bold">
-                {post.author.charAt(0)}
-              </div>
+              {post.avatar ? (
+                <img src={post.avatar} alt="Avatar" className="w-10 h-10 rounded-full object-cover" />
+              ) : (
+                <div className="w-10 h-10 rounded-full bg-[var(--color-secondary)] text-white flex items-center justify-center font-bold">
+                  {post.author.charAt(0).toUpperCase()}
+                </div>
+              )}
               <div>
                 <p className="font-semibold">{post.author}</p>
                 <p className="text-xs opacity-60">{new Date(post.createdAt).toLocaleString()}</p>
