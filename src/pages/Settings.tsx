@@ -1,103 +1,74 @@
-import { useState, useEffect } from 'react';
-import { Palette, Moon, Sun, Monitor } from 'lucide-react';
+import React from 'react';
+import { useTheme } from '../ThemeContext';
+import { Moon, Sun, Palette, Droplets } from 'lucide-react';
 
-export default function Settings() {
-  const [themeMode, setThemeMode] = useState(localStorage.getItem('themeMode') || 'system');
-  const [colorTheme, setColorTheme] = useState(localStorage.getItem('colorTheme') || 'violet');
-
-  useEffect(() => {
-    // Apply changes
-    localStorage.setItem('themeMode', themeMode);
-    localStorage.setItem('colorTheme', colorTheme);
-
-    const isDark = themeMode === 'dark' || (themeMode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
-    
-    if (isDark) {
-      document.documentElement.setAttribute('data-theme', 'dark');
-    } else {
-      document.documentElement.removeAttribute('data-theme');
-    }
-
-    document.documentElement.setAttribute('data-color', colorTheme);
-  }, [themeMode, colorTheme]);
+export const Settings: React.FC = () => {
+  const { isDarkMode, toggleDarkMode, colorTheme, setColorTheme } = useTheme();
 
   return (
-    <div className="max-w-2xl mx-auto space-y-8">
-      <div className="mb-6">
-        <h1 className="text-3xl font-black tracking-tight text-slate-800">Settings</h1>
-        <p className="text-slate-500 font-medium mt-1">Customize your Oogway experience</p>
-      </div>
-
-      <div className="bg-white border border-slate-100 rounded-[2rem] p-8 shadow-sm">
-        <div className="flex items-center space-x-3 mb-6">
-          <div className="w-10 h-10 rounded-xl bg-violet-50 flex items-center justify-center text-violet-600">
-            <Monitor className="w-5 h-5" />
+    <div className="p-8 w-full max-w-3xl mx-auto h-full overflow-y-auto">
+      <h1 className="text-3xl font-bold mb-8">Settings</h1>
+      
+      <div className="bg-[var(--color-card-bg)] rounded-3xl shadow-sm border border-[#0000001a] dark:border-[#ffffff1a] p-8 space-y-8">
+        
+        {/* Appearance Section */}
+        <section>
+          <h2 className="text-lg font-bold flex items-center gap-2 mb-4 border-b border-[#0000001a] dark:border-[#ffffff1a] pb-2">
+            <Moon className="w-5 h-5 opacity-70" />
+            Appearance
+          </h2>
+          
+          <div className="flex gap-4">
+            <button 
+              onClick={() => { if(isDarkMode) toggleDarkMode(); }}
+              className={`flex-1 p-4 rounded-2xl border-2 flex flex-col items-center justify-center gap-3 transition-colors ${!isDarkMode ? 'border-[var(--color-primary)] bg-[var(--color-primary)]/5' : 'border-[#0000001a] dark:border-[#ffffff1a] opacity-60 hover:opacity-100'}`}
+            >
+              <Sun className="w-8 h-8" />
+              <span className="font-semibold text-sm">Light Mode</span>
+            </button>
+            <button 
+              onClick={() => { if(!isDarkMode) toggleDarkMode(); }}
+              className={`flex-1 p-4 rounded-2xl border-2 flex flex-col items-center justify-center gap-3 transition-colors ${isDarkMode ? 'border-[var(--color-primary)] bg-[var(--color-primary)]/5' : 'border-[#0000001a] dark:border-[#ffffff1a] opacity-60 hover:opacity-100'}`}
+            >
+              <Moon className="w-8 h-8" />
+              <span className="font-semibold text-sm">Dark Mode</span>
+            </button>
           </div>
-          <h2 className="text-xl font-black text-slate-800">Appearance</h2>
-        </div>
+        </section>
 
-        <div className="space-y-6">
-          <div>
-            <label className="block text-sm font-bold text-slate-700 mb-3 ml-1">Theme Mode</label>
-            <div className="grid grid-cols-3 gap-3">
-              <button 
-                onClick={() => setThemeMode('light')}
-                className={`p-4 rounded-2xl border-2 flex flex-col items-center justify-center space-y-2 transition-all ${
-                  themeMode === 'light' ? 'border-violet-500 bg-violet-50 text-violet-700 shadow-sm' : 'border-slate-100 bg-slate-50 text-slate-500 hover:border-slate-200'
-                }`}
-              >
-                <Sun className="w-6 h-6" />
-                <span className="font-bold text-sm">Light</span>
-              </button>
-              <button 
-                onClick={() => setThemeMode('dark')}
-                className={`p-4 rounded-2xl border-2 flex flex-col items-center justify-center space-y-2 transition-all ${
-                  themeMode === 'dark' ? 'border-violet-500 bg-violet-50 text-violet-700 shadow-sm' : 'border-slate-100 bg-slate-50 text-slate-500 hover:border-slate-200'
-                }`}
-              >
-                <Moon className="w-6 h-6" />
-                <span className="font-bold text-sm">Dark</span>
-              </button>
-              <button 
-                onClick={() => setThemeMode('system')}
-                className={`p-4 rounded-2xl border-2 flex flex-col items-center justify-center space-y-2 transition-all ${
-                  themeMode === 'system' ? 'border-violet-500 bg-violet-50 text-violet-700 shadow-sm' : 'border-slate-100 bg-slate-50 text-slate-500 hover:border-slate-200'
-                }`}
-              >
-                <Monitor className="w-6 h-6" />
-                <span className="font-bold text-sm">System</span>
-              </button>
-            </div>
+        {/* Color Theme Section */}
+        <section>
+          <h2 className="text-lg font-bold flex items-center gap-2 mb-4 border-b border-[#0000001a] dark:border-[#ffffff1a] pb-2">
+            <Palette className="w-5 h-5 opacity-70" />
+            Color Theme
+          </h2>
+          
+          <div className="flex gap-4">
+            <button 
+              onClick={() => setColorTheme('multi')}
+              className={`flex-1 p-4 rounded-2xl border-2 flex flex-col items-center justify-center gap-3 transition-colors ${colorTheme === 'multi' ? 'border-[var(--color-primary)] bg-[var(--color-primary)]/5' : 'border-[#0000001a] dark:border-[#ffffff1a] opacity-60 hover:opacity-100'}`}
+            >
+              <div className="flex -space-x-2">
+                <div className="w-6 h-6 rounded-full bg-blue-500 border-2 border-[var(--color-card-bg)]"></div>
+                <div className="w-6 h-6 rounded-full bg-emerald-500 border-2 border-[var(--color-card-bg)]"></div>
+                <div className="w-6 h-6 rounded-full bg-amber-500 border-2 border-[var(--color-card-bg)]"></div>
+              </div>
+              <span className="font-semibold text-sm mt-1">Multi-color Theme</span>
+            </button>
+            <button 
+              onClick={() => setColorTheme('mono')}
+              className={`flex-1 p-4 rounded-2xl border-2 flex flex-col items-center justify-center gap-3 transition-colors ${colorTheme === 'mono' ? 'border-[var(--color-primary)] bg-[var(--color-primary)]/5' : 'border-[#0000001a] dark:border-[#ffffff1a] opacity-60 hover:opacity-100'}`}
+            >
+              <Droplets className="w-8 h-8 text-slate-500 dark:text-slate-400" />
+              <span className="font-semibold text-sm">Monochrome Theme</span>
+            </button>
           </div>
+          <p className="mt-4 text-sm opacity-70">
+            Multi-color highlights UI elements with vibrant different colors. Monochrome uses refined slate grays.
+          </p>
+        </section>
 
-          <div className="pt-4 border-t border-slate-100">
-            <label className="block text-sm font-bold text-slate-700 mb-3 ml-1">Color Palette</label>
-            <div className="flex gap-4">
-              <button 
-                onClick={() => setColorTheme('violet')}
-                className={`w-14 h-14 rounded-full bg-gradient-to-br from-[#8b5cf6] to-[#d946ef] border-4 transition-all ${
-                  colorTheme === 'violet' ? 'border-white ring-4 ring-violet-500 shadow-lg scale-110' : 'border-transparent hover:scale-105 shadow-sm opacity-80 hover:opacity-100'
-                }`}
-                title="Violet & Fuchsia"
-              />
-              <button 
-                onClick={() => setColorTheme('emerald')}
-                className={`w-14 h-14 rounded-full bg-gradient-to-br from-[#10b981] to-[#0ea5e9] border-4 transition-all ${
-                  colorTheme === 'emerald' ? 'border-white ring-4 ring-emerald-500 shadow-lg scale-110' : 'border-transparent hover:scale-105 shadow-sm opacity-80 hover:opacity-100'
-                }`}
-                title="Emerald & Sky"
-              />
-              <button 
-                onClick={() => setColorTheme('rose')}
-                className={`w-14 h-14 rounded-full bg-gradient-to-br from-[#f43f5e] to-[#f97316] border-4 transition-all ${
-                  colorTheme === 'rose' ? 'border-white ring-4 ring-rose-500 shadow-lg scale-110' : 'border-transparent hover:scale-105 shadow-sm opacity-80 hover:opacity-100'
-                }`}
-                title="Rose & Orange"
-              />
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   );
-}
+};

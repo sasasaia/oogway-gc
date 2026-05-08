@@ -1,140 +1,47 @@
-@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&display=swap');
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Nunito", ui-sans-serif, system-ui, sans-serif;
-  
-  /* Map slate to semantic variables */
-  --color-slate-50: var(--theme-bg-secondary);
-  --color-slate-100: var(--theme-border);
-  --color-slate-200: var(--theme-border-hover);
-  --color-slate-400: var(--theme-text-muted);
-  --color-slate-500: var(--theme-text-secondary);
-  --color-slate-600: var(--theme-text-secondary-hover);
-  --color-slate-700: var(--theme-text-primary);
-  --color-slate-800: var(--theme-text-strong);
-  --color-slate-900: var(--theme-text-headline);
-  --color-white: var(--theme-bg-primary);
-  
-  /* Map primary (violet) and accent (fuchsia) */
-  --color-violet-50: var(--theme-primary-50);
-  --color-violet-100: var(--theme-primary-100);
-  --color-violet-200: var(--theme-primary-200);
-  --color-violet-400: var(--theme-primary-400);
-  --color-violet-500: var(--theme-primary-500);
-  --color-violet-600: var(--theme-primary-600);
-  --color-violet-700: var(--theme-primary-700);
-  
-  --color-fuchsia-50: var(--theme-accent-50);
-  --color-fuchsia-100: var(--theme-accent-100);
-  --color-fuchsia-500: var(--theme-accent-500);
-  --color-fuchsia-600: var(--theme-accent-600);
-  --color-fuchsia-700: var(--theme-accent-700);
+  --color-primary: var(--color-primary-val);
+  --color-secondary: var(--color-secondary-val);
+  --color-accent: var(--color-accent-val);
+  --color-base-bg: var(--color-bg-val);
+  --color-base-text: var(--color-text-val);
+  --color-card-bg: var(--color-card-val);
 }
 
 :root {
-  /* Default Light Mode */
-  --theme-bg-primary: #ffffff;
-  --theme-bg-secondary: #f8fafc;
-  --theme-border: #f1f5f9;
-  --theme-border-hover: #e2e8f0;
-  --theme-text-muted: #94a3b8;
-  --theme-text-secondary: #64748b;
-  --theme-text-secondary-hover: #475569;
-  --theme-text-primary: #334155;
-  --theme-text-strong: #1e293b;
-  --theme-text-headline: #0f172a;
-  
-  /* Default Violet theme */
-  --theme-primary-50: #f5f3ff;
-  --theme-primary-100: #ede9fe;
-  --theme-primary-200: #ddd6fe;
-  --theme-primary-400: #a78bfa;
-  --theme-primary-500: #8b5cf6;
-  --theme-primary-600: #7c3aed;
-  --theme-primary-700: #6d28d9;
-  
-  --theme-accent-50: #fdf4ff;
-  --theme-accent-100: #fae8ff;
-  --theme-accent-500: #d946ef;
-  --theme-accent-600: #c026d3;
-  --theme-accent-700: #a21caf;
+  /* Default: Light, Multi-color */
+  --color-primary-val: #3b82f6; /* blue-500 */
+  --color-secondary-val: #10b981; /* emerald-500 */
+  --color-accent-val: #f59e0b; /* amber-500 */
+  --color-bg-val: #f3f4f6; /* gray-100 */
+  --color-text-val: #111827; /* gray-900 */
+  --color-card-val: #ffffff; /* white */
+  color-scheme: light;
 }
 
-[data-theme='dark'] {
-  --theme-bg-primary: #0f172a;      /* slate-900 */
-  --theme-bg-secondary: #020617;    /* slate-950 */
-  --theme-border: #1e293b;          /* slate-800 */
-  --theme-border-hover: #334155;    /* slate-700 */
-  --theme-text-muted: #475569;      /* slate-600 */
-  --theme-text-secondary: #94a3b8;  /* slate-400 */
-  --theme-text-secondary-hover: #cbd5e1; /* slate-300 */
-  --theme-text-primary: #f1f5f9;    /* slate-100 */
-  --theme-text-strong: #f8fafc;     /* slate-50 */
-  --theme-text-headline: #ffffff;    /* white */
-  
-  --theme-primary-50: #2e1065;
-  --theme-primary-100: #4c1d95;
-  --theme-primary-200: #5b21b6;
-  
-  --theme-accent-50: #4a044e;
-  --theme-accent-100: #701a75;
+:root[data-color-theme="mono"] {
+  /* Mono-color mode overriding the multi colors */
+  --color-primary-val: #64748b; /* slate-500 */
+  --color-secondary-val: #64748b; /* slate-500 */
+  --color-accent-val: #475569; /* slate-600 */
 }
 
-/* Emerald Theme */
-:root[data-color='emerald'], [data-theme='dark'][data-color='emerald'] {
-  --theme-primary-50: #ecfdf5;
-  --theme-primary-100: #d1fae5;
-  --theme-primary-200: #a7f3d0;
-  --theme-primary-400: #34d399;
-  --theme-primary-500: #10b981;
-  --theme-primary-600: #059669;
-  --theme-primary-700: #047857;
-  
-  --theme-accent-50: #f0f9ff;
-  --theme-accent-100: #e0f2fe;
-  --theme-accent-500: #0ea5e9;
-  --theme-accent-600: #0284c7;
-  --theme-accent-700: #0369a1;
+.dark {
+  --color-bg-val: #111827; /* gray-900 */
+  --color-text-val: #f9fafb; /* gray-50 */
+  --color-card-val: #1f2937; /* gray-800 */
+  color-scheme: dark;
 }
 
-[data-theme='dark'][data-color='emerald'] {
-  --theme-primary-50: #022c22;
-  --theme-primary-100: #064e3b;
-  --theme-primary-200: #065f46;
-  
-  --theme-accent-50: #082f49;
-  --theme-accent-100: #0c4a6e;
-}
-
-/* Rose Theme */
-:root[data-color='rose'], [data-theme='dark'][data-color='rose'] {
-  --theme-primary-50: #fff1f2;
-  --theme-primary-100: #ffe4e6;
-  --theme-primary-200: #fecdd3;
-  --theme-primary-400: #fb7185;
-  --theme-primary-500: #f43f5e;
-  --theme-primary-600: #e11d48;
-  --theme-primary-700: #be123c;
-  
-  --theme-accent-50: #fff7ed;
-  --theme-accent-100: #ffedd5;
-  --theme-accent-500: #f97316;
-  --theme-accent-600: #ea580c;
-  --theme-accent-700: #c2410c;
-}
-
-[data-theme='dark'][data-color='rose'] {
-  --theme-primary-50: #4c0519;
-  --theme-primary-100: #881337;
-  --theme-primary-200: #9f1239;
-  
-  --theme-accent-50: #431407;
-  --theme-accent-100: #7c2d12;
+.dark[data-color-theme="mono"] {
+  --color-primary-val: #94a3b8; /* slate-400 */
+  --color-secondary-val: #94a3b8; /* slate-400 */
+  --color-accent-val: #cbd5e1; /* slate-300 */
 }
 
 body {
-  font-family: var(--font-sans);
-  background-color: var(--theme-bg-secondary);
-  color: var(--theme-text-headline);
+  background-color: var(--color-base-bg);
+  color: var(--color-base-text);
+  font-family: 'Inter', system-ui, sans-serif;
 }
