@@ -37,6 +37,8 @@ declare global {
 const app = express();
 app.use(express.json({ limit: '10mb' }));
 
+// Initialize DB Connection
+let pool: sql.ConnectionPool | null = null;
 async function getPool() {
   if (pool) return pool;
   if (process.env.DB_HOST) {
