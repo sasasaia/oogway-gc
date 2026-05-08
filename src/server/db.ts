@@ -1,16 +1,32 @@
 import sql from 'mssql';
 
-const connectionString = import.meta.env.VITE_MSSQL_URL;
+const connectionString = process.env.MSSQL_URL || process.env.DATABASE_URL;
 
-if (!connectionString) {
-  console.warn("⚠️ MSSQL_URL environment variable is not defined.");
-  console.warn("Please add MSSQL_URL or DATABASE_URL to your environment secrets to use the SQL Server.");
+const dbConfig: sql.config | string | undefined = connectionString || (process.env.DB_SERVER && process.env.DB_USER && process.env.DB_PASSWORD ? {
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME || '',
+    server: process.env.DB_SERVER,
+    pool: {
+      max: 10,
+      min: 0,
+      idleTimeoutMillis: 30000
+    },
+    options: {
+      encrypt: true, // for modern Azure SQL and others
+      trustServerCertificate: process.env.DB_TRUST_CERT === 'true' // change to true for local dev / self-signed certs
+    }
+} : undefined);
+
+if (!dbConfig) {
+  console.warn("⚠️ Database connection variables missing.");
+  console.warn("Please provide either MSSQL_URL or separate DB_SERVER, DB_USER, DB_PASSWORD, DB_NAME variables.");
 }
 
 let poolPromise: Promise<sql.ConnectionPool> | null = null;
 
-if (connectionString) {
-  poolPromise = sql.connect(connectionString).catch(err => {
+if (dbConfig) {
+  poolPromise = sql.connect(dbConfig).catch(err => {
       console.error("Database Connection Failed! Bad Config: ", err);
       throw err;
   });
