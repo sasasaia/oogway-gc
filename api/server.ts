@@ -43,6 +43,9 @@ async function getPool() {
   if (pool) return pool;
   if (process.env.DB_HOST) {
     pool = await sql.connect(dbConfig);
+    try {
+      await pool.request().query("ALTER TABLE Events ADD RecurringType NVARCHAR(50) DEFAULT 'none', RecurringEnd DATETIME NULL");
+    } catch(e) {}
     return pool;
   }
   return null;
@@ -57,6 +60,7 @@ app.use(async (req, res, next) => {
     next(); // Continue so mock logic can take over if pool is null
   }
 });
+
 // Auth Middleware
 const authenticateToken = (req: express.Request, res: express.Response, next: express.NextFunction) => {
   const authHeader = req.headers['authorization'];
@@ -68,10 +72,12 @@ const authenticateToken = (req: express.Request, res: express.Response, next: ex
     next();
   });
 };
+
 // API endpoints
 app.get("/api/health", (req, res) => {
   res.json({ status: "ok" });
 });
+
 // --- Auth --- //
 app.post("/api/register", async (req, res) => {
   try {
@@ -104,6 +110,7 @@ app.post("/api/register", async (req, res) => {
     res.status(500).json({ error: String(err) });
   }
 });
+
 app.post("/api/login", async (req, res) => {
   try {
     const { username, password } = req.body;
@@ -125,6 +132,7 @@ app.post("/api/login", async (req, res) => {
     res.status(500).json({ error: String(err) });
   }
 });
+
 app.get("/api/me", authenticateToken, async (req, res) => {
   try {
     if (!pool) return res.json({ user: { id: req.user!.id, username: req.user!.username, firstName: 'Mock', lastName: 'User', avatar: null, bio: 'Mock User', location: 'Earth', website: '' } });
@@ -138,6 +146,7 @@ app.get("/api/me", authenticateToken, async (req, res) => {
     res.status(500).json({ error: String(err) });
   }
 });
+
 app.put("/api/profile", authenticateToken, async (req, res) => {
   try {
     const { avatar, bio, location, website, firstName, lastName } = req.body;
@@ -165,6 +174,7 @@ app.put("/api/profile", authenticateToken, async (req, res) => {
       res.status(500).json({ error: String(err) });
   }
 });
+
 // --- Users --- //
 app.get("/api/users", authenticateToken, async (req, res) => {
   try {
@@ -175,6 +185,7 @@ app.get("/api/users", authenticateToken, async (req, res) => {
     res.status(500).json({ error: String(err) });
   }
 });
+
 app.get("/api/users/suggested", authenticateToken, async (req, res) => {
   try {
     if (!pool) return res.json({ users: [{ Id: 4, Username: 'NewUser', Avatar: null, FirstName: 'New', LastName: 'User' }] });
@@ -193,6 +204,7 @@ app.get("/api/users/suggested", authenticateToken, async (req, res) => {
     res.status(500).json({ error: String(err) });
   }
 });
+
 app.post("/api/users/follow", authenticateToken, async (req, res) => {
   try {
     if (!pool) return res.json({ success: true, action: 'followed' });
@@ -221,6 +233,7 @@ app.post("/api/users/follow", authenticateToken, async (req, res) => {
     res.status(500).json({ error: String(err) });
   }
 });
+
 // --- Posts --- //
 app.get("/api/posts", authenticateToken, async (req, res) => {
   try {
@@ -242,6 +255,7 @@ app.get("/api/posts", authenticateToken, async (req, res) => {
     res.status(500).json({ error: String(err) });
   }
 });
+
 app.post("/api/posts", authenticateToken, async (req, res) => {
   try {
     const { content, image } = req.body;
@@ -261,6 +275,7 @@ app.post("/api/posts", authenticateToken, async (req, res) => {
     res.status(500).json({ error: String(err) });
   }
 });
+
 // --- Events --- //
 app.get("/api/events", authenticateToken, async (req, res) => {
   try {
@@ -270,6 +285,7 @@ app.get("/api/events", authenticateToken, async (req, res) => {
     
     const result = await pool.request().query(`
       SELECT e.Id as id, e.Title as title, e.EventDate as date, e.Visibility as visibility,
+             e.RecurringType as recurringType, e.RecurringEnd as recurringEnd,
              u.Username as author
       FROM Events e
       JOIN Users u ON e.UserId = u.Id
@@ -283,7 +299,7 @@ app.get("/api/events", authenticateToken, async (req, res) => {
 
 app.post("/api/events", authenticateToken, async (req, res) => {
   try {
-    const { title, date, visibility } = req.body;
+    const { title, date, visibility, recurringType, recurringEnd } = req.body;
     if (!pool) return res.json({ success: true, message: 'Mock event created' });
     
     const request = pool.request();
@@ -291,16 +307,19 @@ app.post("/api/events", authenticateToken, async (req, res) => {
     request.input('title', sql.NVarChar, title || 'New Event');
     request.input('date', sql.DateTime, new Date(date));
     request.input('visibility', sql.NVarChar, visibility || 'public');
+    request.input('recurringType', sql.NVarChar, recurringType || 'none');
+    request.input('recurringEnd', sql.DateTime, recurringEnd ? new Date(recurringEnd) : null);
     
     await request.query(`
-      INSERT INTO Events (UserId, Title, EventDate, Visibility, CreatedAt)
-      VALUES (@userId, @title, @date, @visibility, GETDATE())
+      INSERT INTO Events (UserId, Title, EventDate, Visibility, CreatedAt, RecurringType, RecurringEnd)
+      VALUES (@userId, @title, @date, @visibility, GETDATE(), @recurringType, @recurringEnd)
     `);
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: String(err) });
   }
 });
+
 // --- Messages --- //
 app.get("/api/messages/:otherUserId", authenticateToken, async (req, res) => {
   try {
@@ -323,6 +342,7 @@ app.get("/api/messages/:otherUserId", authenticateToken, async (req, res) => {
     res.status(500).json({ error: String(err) });
   }
 });
+
 app.post("/api/messages", authenticateToken, async (req, res) => {
   try {
     const { receiverId, content } = req.body;
@@ -344,6 +364,7 @@ app.post("/api/messages", authenticateToken, async (req, res) => {
     res.status(500).json({ error: String(err) });
   }
 });
+
 // --- Notifications --- //
 app.get("/api/notifications", authenticateToken, async (req, res) => {
   try {
@@ -362,6 +383,7 @@ app.get("/api/notifications", authenticateToken, async (req, res) => {
     res.status(500).json({ error: String(err) });
   }
 });
+
 app.post("/api/notifications/read", authenticateToken, async (req, res) => {
   try {
     if (!pool) return res.json({ success: true });
