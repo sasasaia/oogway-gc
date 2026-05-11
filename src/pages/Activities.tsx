@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { format, startOfWeek, addDays, startOfMonth, endOfMonth, endOfWeek, isSameMonth, isSameDay, subMonths, addMonths, parseISO } from 'date-fns';
+import { format, startOfWeek, addDays, startOfMonth, endOfMonth, endOfWeek, isSameMonth, isSameDay, subMonths, addMonths, parseISO, addWeeks, addYears, isBefore, isAfter, startOfDay } from 'date-fns';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useAuth } from '../AuthContext';
 
@@ -9,12 +9,17 @@ interface Event {
   date: string;
   visibility: string;
   author: string;
+  recurringType?: string;
+  recurringEnd?: string | null;
 }
 
 export const Activities: React.FC = () => {
   const [events, setEvents] = useState<Event[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [newEvent, setNewEvent] = useState({ title: '', date: '', visibility: 'public' });
+  const [recurringType, setRecurringType] = useState('none');
+  const [recurringAmount, setRecurringAmount] = useState('1');
+  const [isForever, setIsForever] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
   const { token } = useAuth();
 
@@ -36,6 +41,22 @@ export const Activities: React.FC = () => {
 
   const handleAddEvent = async () => {
     if (!newEvent.title || !newEvent.date) return;
+
+    let recurringEnd = null;
+    if (recurringType !== 'none' && !isForever) {
+      const amount = parseInt(recurringAmount) || 1;
+      const startDate = new Date(newEvent.date);
+      if (recurringType === 'daily') {
+        recurringEnd = addDays(startDate, amount - 1).toISOString();
+      } else if (recurringType === 'weekly') {
+        recurringEnd = addWeeks(startDate, amount - 1).toISOString();
+      } else if (recurringType === 'monthly') {
+        recurringEnd = addMonths(startDate, amount - 1).toISOString();
+      } else if (recurringType === 'yearly') {
+        recurringEnd = addYears(startDate, amount - 1).toISOString();
+      }
+    }
+
     try {
       await fetch('/api/events', {
         method: 'POST',
@@ -43,10 +64,17 @@ export const Activities: React.FC = () => {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}` 
         },
-        body: JSON.stringify(newEvent),
+        body: JSON.stringify({
+          ...newEvent,
+          recurringType,
+          recurringEnd
+        }),
       });
       setShowModal(false);
       setNewEvent({ title: '', date: '', visibility: 'public' });
+      setRecurringType('none');
+      setRecurringAmount('1');
+      setIsForever(false);
       await fetchEvents();
     } catch (error) {
       console.error(error);
@@ -105,6 +133,39 @@ export const Activities: React.FC = () => {
     const startDate = startOfWeek(monthStart);
     const endDate = endOfWeek(monthEnd);
 
+    const expandedEvents: (Event & { occurrenceDate: Date })[] = [];
+    const absoluteEndLimit = addYears(new Date(), 100);
+
+    events.forEach(event => {
+      const initialDate = new Date(event.date);
+      const endLimit = event.recurringEnd ? new Date(event.recurringEnd) : absoluteEndLimit;
+      
+      if (!event.recurringType || event.recurringType === 'none') {
+        expandedEvents.push({ ...event, occurrenceDate: initialDate });
+        return;
+      }
+
+      let curr = new Date(initialDate);
+
+      while ((isBefore(curr, endLimit) || isSameDay(curr, endLimit)) && !isAfter(startOfDay(curr), startOfDay(endDate))) {
+        if (!isBefore(startOfDay(curr), startOfDay(startDate))) {
+          expandedEvents.push({ ...event, occurrenceDate: new Date(curr) });
+        }
+        
+        if (event.recurringType === 'daily') {
+          curr = addDays(curr, 1);
+        } else if (event.recurringType === 'weekly') {
+          curr = addWeeks(curr, 1);
+        } else if (event.recurringType === 'monthly') {
+          curr = addMonths(curr, 1);
+        } else if (event.recurringType === 'yearly') {
+          curr = addYears(curr, 1);
+        } else {
+          break;
+        }
+      }
+    });
+
     const dateFormat = 'd';
     const rows = [];
 
@@ -117,11 +178,7 @@ export const Activities: React.FC = () => {
         formattedDate = format(day, dateFormat);
         const cloneDay = day;
         
-        const dayEvents = events.filter(e => {
-          // Keep parsing date strings so timezones match
-          const eventDate = new Date(e.date);
-          return isSameDay(eventDate, cloneDay);
-        });
+        const dayEvents = expandedEvents.filter(e => isSameDay(e.occurrenceDate, cloneDay));
 
         days.push(
           <div
@@ -206,6 +263,49 @@ export const Activities: React.FC = () => {
                   <option value="friends" className="text-black">Friends Only</option>
                 </select>
               </div>
+
+              <div>
+                <label className="block text-sm font-medium opacity-80 mb-1">Recurrence</label>
+                <select 
+                  className="w-full p-2.5 rounded-lg border border-[#00000033] dark:border-[#ffffff33] bg-transparent outline-none focus:border-[var(--color-primary)] transition-colors"
+                  value={recurringType}
+                  onChange={e => {
+                    setRecurringType(e.target.value);
+                    setIsForever(false);
+                  }}
+                >
+                  <option value="none" className="text-black">None</option>
+                  <option value="daily" className="text-black">Daily</option>
+                  <option value="weekly" className="text-black">Weekly</option>
+                  <option value="monthly" className="text-black">Monthly</option>
+                  <option value="yearly" className="text-black">Yearly</option>
+                </select>
+              </div>
+
+              {recurringType !== 'none' && (
+                <div className="flex items-center gap-4">
+                  {!isForever && (
+                    <div className="flex-1">
+                      <label className="block text-sm font-medium opacity-80 mb-1">
+                        For how many {recurringType === 'daily' ? 'days' : recurringType === 'weekly' ? 'weeks' : recurringType === 'monthly' ? 'months' : 'years'}?
+                      </label>
+                      <input 
+                        type="number" 
+                        min="1"
+                        className="w-full p-2.5 rounded-lg border border-[#00000033] dark:border-[#ffffff33] bg-transparent outline-none focus:border-[var(--color-primary)] transition-colors"
+                        value={recurringAmount}
+                        onChange={e => setRecurringAmount(e.target.value)}
+                      />
+                    </div>
+                  )}
+                  {(recurringType === 'monthly' || recurringType === 'yearly') && (
+                    <div className="flex items-center gap-2 mt-6">
+                       <input type="checkbox" id="forever" checked={isForever} onChange={e => setIsForever(e.target.checked)} className="w-4 h-4 cursor-pointer" />
+                       <label htmlFor="forever" className="text-sm font-medium cursor-pointer">Forever</label>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             <div className="flex gap-3 justify-end mt-8">
