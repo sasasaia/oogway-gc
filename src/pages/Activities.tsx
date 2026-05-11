@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { format, startOfWeek, addDays, getMonth, startOfMonth, getDaysInMonth } from 'date-fns';
+import { format, startOfWeek, addDays, startOfMonth, endOfMonth, endOfWeek, isSameMonth, isSameDay, subMonths, addMonths, parseISO } from 'date-fns';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useAuth } from '../AuthContext';
 
 interface Event {
@@ -14,6 +15,7 @@ export const Activities: React.FC = () => {
   const [events, setEvents] = useState<Event[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [newEvent, setNewEvent] = useState({ title: '', date: '', visibility: 'public' });
+  const [currentDate, setCurrentDate] = useState(new Date());
   const { token } = useAuth();
 
   const fetchEvents = async () => {
@@ -51,10 +53,26 @@ export const Activities: React.FC = () => {
     }
   };
 
-  return (
-    <div className="p-8 w-full max-w-5xl mx-auto h-full overflow-y-auto">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold">Activities</h1>
+  const nextMonth = () => setCurrentDate(addMonths(currentDate, 1));
+  const prevMonth = () => setCurrentDate(subMonths(currentDate, 1));
+
+  const renderHeader = () => {
+    return (
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold flex items-center gap-4">
+          Activities
+          <div className="flex items-center gap-1 text-base font-normal bg-black/5 dark:bg-white/5 rounded-full px-2 py-1 ml-4 border border-[#0000001a] dark:border-[#ffffff1a]">
+            <button onClick={prevMonth} className="p-1 hover:bg-black/10 dark:hover:bg-white/10 rounded-full transition-colors">
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+            <span className="min-w-[120px] text-center font-semibold">
+              {format(currentDate, 'MMMM yyyy')}
+            </span>
+            <button onClick={nextMonth} className="p-1 hover:bg-black/10 dark:hover:bg-white/10 rounded-full transition-colors">
+              <ChevronRight className="w-5 h-5" />
+            </button>
+          </div>
+        </h1>
         <button 
           onClick={() => setShowModal(true)}
           className="bg-[var(--color-primary)] text-white px-5 py-2.5 rounded-lg font-medium hover:opacity-90 transition-all"
@@ -62,28 +80,92 @@ export const Activities: React.FC = () => {
           + Add Event
         </button>
       </div>
+    );
+  };
 
-      {/* Very Simple List View for calendar representing activities */}
-      <div className="bg-[var(--color-card-bg)] rounded-2xl shadow-sm border border-[#0000001a] dark:border-[#ffffff1a] overflow-hidden">
-        {events.length === 0 ? (
-          <div className="p-12 text-center opacity-60">No upcoming events.</div>
-        ) : (
-          <div className="divide-y divide-[#0000001a] dark:divide-[#ffffff1a]">
-            {events.map(event => (
-              <div key={event.id} className="p-5 flex items-center justify-between hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
-                <div className="flex flex-col">
-                  <span className="font-bold text-lg">{event.title}</span>
-                  <span className="text-sm opacity-70 mt-1">
-                    {format(new Date(event.date), 'PPP p')} &bull; by {event.author}
-                  </span>
+  const renderDays = () => {
+    const dateFormat = 'EEEE';
+    const days = [];
+    let startDate = startOfWeek(currentDate);
+
+    for (let i = 0; i < 7; i++) {
+      days.push(
+        <div className="py-3 text-center text-sm font-semibold opacity-60 uppercase tracking-wider" key={i}>
+          {format(addDays(startDate, i), dateFormat)}
+        </div>
+      );
+    }
+
+    return <div className="grid grid-cols-7 border-b border-[#0000001a] dark:border-[#ffffff1a]">{days}</div>;
+  };
+
+  const renderCells = () => {
+    const monthStart = startOfMonth(currentDate);
+    const monthEnd = endOfMonth(monthStart);
+    const startDate = startOfWeek(monthStart);
+    const endDate = endOfWeek(monthEnd);
+
+    const dateFormat = 'd';
+    const rows = [];
+
+    let days = [];
+    let day = startDate;
+    let formattedDate = '';
+
+    while (day <= endDate) {
+      for (let i = 0; i < 7; i++) {
+        formattedDate = format(day, dateFormat);
+        const cloneDay = day;
+        
+        const dayEvents = events.filter(e => {
+          // Keep parsing date strings so timezones match
+          const eventDate = new Date(e.date);
+          return isSameDay(eventDate, cloneDay);
+        });
+
+        days.push(
+          <div
+            className={`min-h-[120px] border-r border-b border-[#0000001a] dark:border-[#ffffff1a] p-2 flex flex-col transition-colors ${
+              !isSameMonth(day, monthStart)
+                ? 'opacity-30 bg-black/5 dark:bg-white/5'
+                : isSameDay(day, new Date()) ? 'bg-[var(--color-primary)]/10' : 'bg-[var(--color-card-bg)] hover:bg-black/5 dark:hover:bg-white/5'
+            }`}
+            key={day.toString()}
+          >
+            <div className="flex justify-between items-start">
+              <span className={`text-sm font-semibold w-7 h-7 flex items-center justify-center rounded-full ${isSameDay(day, new Date()) ? 'bg-[var(--color-primary)] text-white' : ''}`}>
+                {formattedDate}
+              </span>
+            </div>
+            
+            <div className="mt-2 flex-1 flex flex-col gap-1 overflow-y-auto max-h-[80px]">
+              {dayEvents.map(event => (
+                <div key={event.id} className="text-xs p-1.5 rounded bg-[var(--color-primary)]/20 text-[var(--color-primary)] font-medium leading-tight truncate">
+                  {format(new Date(event.date), 'p')} - {event.title}
                 </div>
-                <div className="px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider bg-black/5 dark:bg-white/10">
-                  {event.visibility}
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        )}
+        );
+        day = addDays(day, 1);
+      }
+      rows.push(
+        <div className="grid grid-cols-7" key={day.toString()}>
+          {days}
+        </div>
+      );
+      days = [];
+    }
+    return <div className="flex flex-col border-l border-[#0000001a] dark:border-[#ffffff1a]">{rows}</div>;
+  };
+
+  return (
+    <div className="p-8 w-full max-w-6xl mx-auto h-full overflow-y-auto flex flex-col">
+      {renderHeader()}
+
+      <div className="bg-[var(--color-card-bg)] rounded-2xl shadow-md border border-[#0000001a] dark:border-[#ffffff1a] overflow-hidden flex-1 flex flex-col">
+        {renderDays()}
+        {renderCells()}
       </div>
 
       {/* Modal */}
@@ -146,3 +228,4 @@ export const Activities: React.FC = () => {
     </div>
   );
 };
+
